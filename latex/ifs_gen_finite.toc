@@ -1,0 +1,7 @@
+\contentsline {chapter}{\chapternumberline {I}Finite Type IV}{1}{chapter.0.1}
+\contentsline {section}{\numberline {1}Basic Definitions and Terminology}{1}{section.0.1.1}
+\contentsline {subsection}{Iterated Function Systems}{1}{section*.1}
+\contentsline {subsection}{Main Example}{2}{section*.2}
+\contentsline {subsection}{Fundamental Properties of Finite Type}{3}{section*.3}
+\contentsline {section}{\numberline {2}Transition Matrices}{3}{section.0.1.2}
+\contentsline {section}{\numberline {3}Misc ideas}{3}{section.0.1.3}

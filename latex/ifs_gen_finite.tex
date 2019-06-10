@@ -1,0 +1,585 @@
+% header -----------------------------------------------------------------------
+% Template created by texnew (author: Alex Rutar); info can be found at 'https://github.com/alexrutar/texnew'.
+% version (1.13)
+
+
+% doctype ----------------------------------------------------------------------
+\documentclass[11pt, a4paper]{memoir}
+\usepackage[utf8]{inputenc}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=3cm]{geometry}
+\usepackage[protrusion=true,expansion=true]{microtype}
+
+
+% packages ---------------------------------------------------------------------
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{etoolbox}
+
+% Set enimitem
+\usepackage{enumitem}
+\SetEnumitemKey{nl}{nolistsep}
+\SetEnumitemKey{r}{label=(\roman*)}
+
+% Set tikz
+\usepackage{tikz, pgfplots}
+\pgfplotsset{compat=1.15}
+\usetikzlibrary{intersections,positioning,cd}
+\usetikzlibrary{arrows,arrows.meta}
+\tikzcdset{arrow style=tikz,diagrams={>=stealth}}
+
+
+% macros -----------------------------------------------------------------------
+\DeclareMathOperator{\N}{{\mathbb{N}}}
+\DeclareMathOperator{\Q}{{\mathbb{Q}}}
+\DeclareMathOperator{\Z}{{\mathbb{Z}}}
+\DeclareMathOperator{\R}{{\mathbb{R}}}
+\DeclareMathOperator{\C}{{\mathbb{C}}}
+\DeclareMathOperator{\F}{{\mathbb{F}}}
+
+% Boldface includes math
+\newcommand{\mbf}[1]{{\boldmath\bfseries #1}}
+
+% proof implications
+\newcommand{\imp}[2]{($#1\Rightarrow#2$)\hspace{0.2cm}}
+\newcommand{\impe}[2]{($#1\Leftrightarrow#2$)\hspace{0.2cm}}
+\newcommand{\impr}{{($\Rightarrow$)\hspace{0.2cm}}}
+\newcommand{\impl}{{($\Leftarrow$)\hspace{0.2cm}}}
+
+% align macros
+\newcommand{\agspace}{\ensuremath{\phantom{--}}}
+\newcommand{\agvdots}{\ensuremath{\hspace{0.16cm}\vdots}}
+
+% convenient brackets
+\newcommand{\brac}[1]{\ensuremath{\left\langle #1 \right\rangle}}
+\newcommand{\norm}[1]{\ensuremath{\left\lVert#1\right\rVert}}
+\newcommand{\abs}[1]{\ensuremath{\left\lvert#1\right\rvert}}
+
+% arrows
+\newcommand{\lto}[0]{\ensuremath{\longrightarrow}}
+\newcommand{\fto}[1]{\ensuremath{\xrightarrow{\scriptstyle{#1}}}}
+\newcommand{\hto}[0]{\ensuremath{\hookrightarrow}}
+\newcommand{\mapsfrom}[0]{\mathrel{\reflectbox{\ensuremath{\mapsto}}}}
+ 
+% Divides, Not Divides
+\renewcommand{\div}{\bigm|}
+\newcommand{\ndiv}{%
+    \mathrel{\mkern.5mu % small adjustment
+        % superimpose \nmid to \big|
+        \ooalign{\hidewidth$\big|$\hidewidth\cr$/$\cr}%
+    }%
+}
+
+% Convenient overline
+\newcommand{\ol}[1]{\ensuremath{\overline{#1}}}
+
+% Big \cdot
+\makeatletter
+\newcommand*\bigcdot{\mathpalette\bigcdot@{.5}}
+\newcommand*\bigcdot@[2]{\mathbin{\vcenter{\hbox{\scalebox{#2}{$\m@th#1\bullet$}}}}}
+\makeatother
+
+% Big and small Disjoint union
+\makeatletter
+\providecommand*{\cupdot}{%
+  \mathbin{%
+    \mathpalette\@cupdot{}%
+  }%
+}
+\newcommand*{\@cupdot}[2]{%
+  \ooalign{%
+    $\m@th#1\cup$\cr
+    \sbox0{$#1\cup$}%
+    \dimen@=\ht0 %
+    \sbox0{$\m@th#1\cdot$}%
+    \advance\dimen@ by -\ht0 %
+    \dimen@=.5\dimen@
+    \hidewidth\raise\dimen@\box0\hidewidth
+  }%
+}
+
+\providecommand*{\bigcupdot}{%
+  \mathop{%
+    \vphantom{\bigcup}%
+    \mathpalette\@bigcupdot{}%
+  }%
+}
+\newcommand*{\@bigcupdot}[2]{%
+  \ooalign{%
+    $\m@th#1\bigcup$\cr
+    \sbox0{$#1\bigcup$}%
+    \dimen@=\ht0 %
+    \advance\dimen@ by -\dp0 %
+    \sbox0{\scalebox{2}{$\m@th#1\cdot$}}%
+    \advance\dimen@ by -\ht0 %
+    \dimen@=.5\dimen@
+    \hidewidth\raise\dimen@\box0\hidewidth
+  }%
+}
+\makeatother
+
+
+% macros (theorem) -------------------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+\usepackage[thmmarks,amsmath,hyperref]{ntheorem}
+\usepackage[capitalise,nameinlink]{cleveref}
+
+% Numbered Statements
+\theoremstyle{change}
+\theoremindent\parindent
+\theorembodyfont{\itshape}
+\theoremheaderfont{\bfseries\boldmath}
+\newtheorem{theorem}{Theorem.}[section]
+\newtheorem{lemma}[theorem]{Lemma.}
+\newtheorem{corollary}[theorem]{Corollary.}
+\newtheorem{proposition}[theorem]{Proposition.}
+
+% Claim environment
+\theoremstyle{plain}
+\theorempreskip{0.2cm}
+\theorempostskip{0.2cm}
+\theoremheaderfont{\scshape}
+\newtheorem{claim}{Claim}
+\renewcommand\theclaim{\Roman{claim}}
+\AtBeginEnvironment{theorem}{\setcounter{claim}{0}}
+
+% Un-numbered Statements
+\theorempreskip{0.1cm}
+\theorempostskip{0.1cm}
+\theoremindent0.0cm
+\theoremstyle{nonumberplain}
+\theorembodyfont{\upshape}
+\theoremheaderfont{\bfseries\itshape}
+\newtheorem{definition}{Definition.}
+\theoremheaderfont{\itshape}
+\newtheorem{example}{Example.}
+\newtheorem{remark}{Remark.}
+
+% Proof / solution environments
+\theoremseparator{}
+\theoremheaderfont{\hspace*{\parindent}\scshape}
+\theoremsymbol{$//$}
+\newtheorem{solution}{Sol'n}
+\theoremsymbol{$\blacksquare$}
+\theorempostskip{0.4cm}
+\newtheorem{proof}{Proof}
+\theoremsymbol{}
+\newtheorem{nmproof}{Proof}
+
+% Format references
+\crefformat{equation}{(#2#1#3)}
+
+
+% macros (algebra) -------------------------------------------------------------
+\DeclareMathOperator{\Ann}{Ann}
+\DeclareMathOperator{\Aut}{Aut}
+\DeclareMathOperator{\chr}{char}
+\DeclareMathOperator{\coker}{coker}
+\DeclareMathOperator{\disc}{disc}
+\DeclareMathOperator{\End}{End}
+\DeclareMathOperator{\Fix}{Fix}
+\DeclareMathOperator{\Frac}{Frac}
+\DeclareMathOperator{\Gal}{Gal}
+\DeclareMathOperator{\GL}{GL}
+\DeclareMathOperator{\Hom}{Hom}
+\DeclareMathOperator{\id}{id}
+\DeclareMathOperator{\im}{im}
+\DeclareMathOperator{\lcm}{lcm}
+\DeclareMathOperator{\Nil}{Nil}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\Res}{Res}
+\DeclareMathOperator{\Spec}{Spec}
+\DeclareMathOperator{\spn}{span}
+\DeclareMathOperator{\Stab}{Stab}
+\DeclareMathOperator{\Tor}{Tor}
+
+% Lagrange symbol
+\newcommand{\lgs}[2]{\ensuremath{\left(\frac{#1}{#2}\right)}}
+
+% Quotient (larger in display mode)
+\newcommand{\quot}[2]{\mathchoice{\left.\raisebox{0.14em}{$#1$}\middle/\raisebox{-0.14em}{$#2$}\right.}
+                                 {\left.\raisebox{0.08em}{$#1$}\middle/\raisebox{-0.08em}{$#2$}\right.}
+                                 {\left.\raisebox{0.03em}{$#1$}\middle/\raisebox{-0.03em}{$#2$}\right.}
+                                 {\left.\raisebox{0em}{$#1$}\middle/\raisebox{0em}{$#2$}\right.}}
+
+
+% macros (analysis) ------------------------------------------------------------
+\DeclareMathOperator{\M}{{\mathcal{M}}}
+\DeclareMathOperator{\B}{{\mathcal{B}}}
+\DeclareMathOperator{\ps}{{\mathcal{P}}}
+\DeclareMathOperator{\pr}{{\mathbb{P}}}
+\DeclareMathOperator{\E}{{\mathbb{E}}}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\sgn}{sgn}
+
+\renewcommand{\Re}{\ensuremath{\operatorname{Re}}}
+\renewcommand{\Im}{\ensuremath{\operatorname{Im}}}
+\renewcommand{\d}[1]{\ensuremath{\operatorname{d}\!{#1}}}
+
+
+% file-specific preamble -------------------------------------------------------
+% REPLACE
+
+
+% constants --------------------------------------------------------------------
+\newcommand{\subject}{REPLACE}
+\newcommand{\semester}{REPLACE}
+
+
+% formatting -------------------------------------------------------------------
+% Fonts
+\usepackage{kpfonts}
+\usepackage{dsfont}
+
+% Equation numbering
+\numberwithin{equation}{section}
+
+% Footnote
+\setfootins{0.5cm}{0.5cm} % footer space above
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}} % footnote symbol
+
+% Table of Contents
+\renewcommand{\thechapter}{\Roman{chapter}}
+\counterwithout{section}{chapter}
+\counterwithin*{chapter}{part}
+\renewcommand*{\cftchaptername}{Chapter } % Place 'Chapter' before roman
+\setlength\cftchapternumwidth{4em} % Add space before chapter name
+\cftpagenumbersoff{chapter} % Turn off page numbers for chapter
+
+% Section / Subsection headers
+\newcommand*{\shortcenter}[1]{%
+    \sethangfrom{\noindent ##1}%
+    \Large\boldmath\scshape\bfseries
+    \centering
+\parbox{5in}{\centering #1}\par}
+\setsecheadstyle{\shortcenter}
+\setsubsecheadstyle{\large\scshape\boldmath\bfseries\raggedright}
+
+% Chapter Headers
+\chapterstyle{verville}
+
+% Page Headers / Footers
+\setsecnumdepth{section}
+\copypagestyle{myruled}{ruled} % Draw formatting from existing 'ruled' style
+\makeoddhead{myruled}{}{}{\scshape\subject}
+\makeevenfoot{myruled}{}{\thepage}{}
+\makeoddfoot{myruled}{}{\thepage}{}
+\pagestyle{myruled}
+\setfootins{0.5cm}{0.5cm}
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}}
+
+% Titlepage
+\title{\subject}
+\author{Alex Rutar\thanks{\itshape arutar@uwaterloo.ca}\\ University of Waterloo}
+\date{\semester\thanks{Last updated: \today}}
+
+\begin{document}
+\pagenumbering{gobble}
+\hypersetup{pageanchor=false}
+\maketitle
+\newpage
+\frontmatter
+\hypersetup{pageanchor=true}
+\tableofcontents*
+\newpage
+\mainmatter
+
+
+% main document ----------------------------------------------------------------
+% \subsection{Generations and Net Intervals}
+% \begin{definition}
+    % By a \textbf{generation rule} we mean a sequence of disjoint sets of words $\{\Lambda_n\}_{n=0}^\infty$ satisfying the following properties:
+    % \begin{enumerate}[nl,r]
+        % \item $\Lambda_0$ consists of exactly the empty word.
+        % \item If $\sigma\in\Sigma^*$ is any infinite word, for each $n\geq 1$ there is a unique $i_n$ so that $(\sigma_1,\ldots,\sigma_{i_n})\in\Lambda_n$.
+        % \item There is some constant $M>0$ (not dependent on $n$) such that for any words $\sigma,\tau\in\Lambda_n$
+            % \begin{equation*}
+                % |\log(|r_\sigma|)-\log(|r_\tau|)|<M
+            % \end{equation*}
+    % \end{enumerate}
+% \end{definition}
+% We say that a word $\sigma\in\Lambda_n$ is of \mbf{generation $n$}.
+% As a consequence of (ii), each $\Lambda_n$ must be finite.
+% \begin{example}
+    % Set $r_{\min}=\min_j|r_j|$, $\Lambda_0$ the set consisting of the empty word, and define for $n\geq 1$
+    % \begin{equation*}
+        % \Lambda_n=\{\sigma\in\Sigma:|r_\sigma|\leq r_{\min}^n\text{ and }|r_{\sigma^i}|>r_{\min}^n\}
+    % \end{equation*}
+    % Taking $M=r_{\min}$, we see that $\{\Lambda_n\}_{n=0}^\infty$ is a generation rule.
+% \end{example}
+% Fix a generation rule $\{\Lambda_n\}_{n=0}^\infty$.
+% For each positive integer $n$, let $h_1,\ldots,h_{s_n}$ be the collection of elements of the set $\{S_{\sigma(0)},S_{\sigma(1)}:\sigma\in\Lambda_n\}$ listed in increasing order.
+% We set
+% \begin{equation*}
+    % \mathcal{F}_n=\{[h_j,h_{j+1}]:1\leq j\leq s_{n}-1\text{ and }(h_j,h_{j+1})\cap K\neq\emptyset\}
+% \end{equation*}
+% Elements of $\mathcal{F}_n$ are called \mbf{net intervals of generation $n$}.
+% Let $[a,b]=\Delta\in\mathcal{F}_n$ and write $l(\Delta)=b-a$.
+% \begin{definition}
+    % A pair $(a,L)$ is a \textbf{neighbour} of $\Delta\in\mathcal{F}_n$ if there is some $\sigma\in\Lambda_n$ such that $S_\sigma(0,1)\cap\Delta\neq\emptyset$, $\ell(\Delta)^{-1}r_\sigma=L$, and $\ell(\Delta)^{-1}(a-S_\sigma(0))=a$.
+    % Then the \textbf{neighbour set} of $\Delta$ is the ordered tuple
+    % \begin{equation*}
+        % V_n(\Delta)=((a_1,L_1),\ldots,(a_i,L_i))
+    % \end{equation*}
+    % where each $(a_i,L_i)$ is a neighbour of $\Delta$.
+    % We order these tuples so that $a_i\leq a_{i+1}$ and if $a_i=a_{i+1}$, then $L_i<L_{i+1}$.
+% \end{definition}
+% \begin{definition}
+    % We say that the IFS $\{S_i\}_{i=1}^\infty$ is \textbf{finite type} if there exists some generation rule $\{\Lambda_n\}_{n=0}^\infty$ such that there are only finitely many $V_n(\Delta)$.
+% \end{definition}
+% Given a net interval $\Delta\in\mathcal{F}_{n}$, there is a unique net interval $\Delta'\in\mathcal{F}_{n-1}$ such that $\Delta\subseteq\Delta'$.
+% We then say that the \mbf{normalized length} of $\Delta$ is given by $\ell(\Delta)/\ell(\Delta')$.
+% \begin{theorem}
+    % The normalized length and neighbour set of any child of $\Delta$ depends only on the normalized length and neighbour set of $\Delta$.
+% \end{theorem}
+% \begin{proof}
+    % If $\sigma=(i_1,\ldots,i_n)\in\Sigma^*$ is any word, for each $j=0,\ldots,k$, let $\sigma_j=(i_1,\ldots,i_n,j)$ so that by the defining identity of $\mu$, we have
+    % \begin{align}
+        % p_\sigma\mu\circ S_\sigma^{-1}(E) &= p_\sigma\sum_{j=0}^k p_j\mu(S_\sigma\circ S_j^{-1}(E))\nonumber\\
+                                          % &= \sum_{j=0}^k p_{\sigma_j}\mu(S_{\sigma_j}^{-1}(E))\label{e:mu-2}
+    % \end{align}
+    % Then since $\{\Lambda_n\}_{n=0}^\infty$ is a generation rule, by property (i), for any finite word $\sigma$ not of the form $\sigma=\sigma_1\sigma_2$ with $\sigma_1\in\Lambda_n$, for each $j=0,\ldots,k$ there exists some (finite and possibly length 0 word) $\tau$ so that $\sigma_j\tau\in\Lambda_n$.
+    % Thus by inductively applying \cref{e:mu-def} to words not yet of generation $n$, we have from \cref{e:mu-2}
+    % \begin{equation}
+        % \mu(E)=\sum_{\sigma\in\Lambda_n}p_\sigma\mu(S_\sigma^{-1}(E))
+    % \end{equation}
+    % for any $E\in\mathcal{B}([0,1])$.
+% \end{proof}
+
+% Comments: condition (iii) in generation rule is very sensitive.
+% We want some sort of requirement that the net intervals of generation $n$ are close in length.
+% Even if the words are of generation $n$ are close in size, it can happen that some net interval of generation $n$ is very small.
+% \section{Weak Separation Property}
+% Let
+% \begin{align*}
+    % \mathcal{I}_b&:= \{\sigma=(j_1,\ldots,j_n)\in\Sigma^*:r_\sigma\leq b<r_{\sigma^-}\}\\
+    % \mathcal{A}_b&:= \{S_j:j\in\mathcal{I}_b\}
+% \end{align*}
+% We then have the following definition:
+% \begin{definition}
+    % An IFS $\{S_i\}_{i=1}^N$ has the weak separation property (WSP) if there exists some $x_0\in \R$ and $\ell\in\N$ such that for any $\sigma\in\Sigma^*$ and $0 < b < 1$, any closed ball with radius $b$ contains no more than distinct points of the form $S(S_\sigma (x_0 )),S\in \mathcal{A}_b$.
+% \end{definition}
+% In Lau, Ngai (2007), they define the notion of ``generalized finite type'' as follows
+
+\chapter{Finite Type IV}
+\section{Basic Definitions and Terminology}
+\subsection{Iterated Function Systems}
+Throughout, we let $\lambda$ denote the Lebesgue measure on $\R$.
+\begin{definition}
+    An \textbf{IFS} is a finite set of contractions
+    \begin{equation*}
+        S_i(x) = r_ix+a_i:\R\to\R\text{ for each }i=0,1,\ldots,k
+    \end{equation*}
+    with $k\geq 1$ and $0<|r_i|<1$.
+\end{definition}
+Each IFS generates a unique invariant compact set $K$, known as its associated self-similar set, satisfying
+\begin{equation*}
+    K=\bigcup_{j=0}^kS_j(K).
+\end{equation*}
+Rescaling the $r_i$ and $a_i$ if necessary, we may assume the convex hull of $K$ is $[0,1]$.
+We also associate probabilities $0<p_i<1$ for each $i=0,\ldots,k$ which satisfy $\sum_i p_i=1$.
+To these probabilities there is a unique self-similar measure $\mu$ with $\supp\mu=K$ satisfying
+\begin{equation}
+    \mu=\sum_{j=0}^k p_j\mu\circ S_j^{-1}.\label{e:mu-def}
+\end{equation}
+We are primarily interested in studying properties of this measure $\mu$.
+
+Let $\Sigma=\{0,1,\ldots,k\}$ be our alphabet, let $\Sigma^k$ denote the words of length $k$, and $\Sigma^*=\bigcup_{k=0}^\infty\Sigma_k$ denote the set of all the finite words on $\Sigma$.
+Given $\sigma=(\sigma_1,\ldots,\sigma_j)\in\Sigma$, we let
+\begin{align*}
+    \sigma^- &=(\sigma_1,\ldots,\sigma_{j-1})\\
+    S_\sigma &= S_{\sigma_1}\circ\cdots\circ S_{\sigma_j}\\
+\end{align*}
+and similarly,
+\begin{align*}
+    r_\sigma = \prod_{i=1}^j r_{\sigma_i}\text{ and }p_\sigma = \prod_{i=1}^j p_{\sigma_i}.
+\end{align*}
+
+For any $0<\alpha<1$, we define the family
+\begin{equation*}
+    \Lambda_\alpha=\{\sigma\in\Sigma^*:|r_\sigma|\leq\alpha<|r_{\sigma^-}|\}
+\end{equation*}
+called the \mbf{words of generation $\alpha$}.
+Given a word $\sigma$, we say that the \textbf{generation} $G(\sigma)$ is the interval $[r_\sigma,r_{\sigma^-})$.
+By definition $\alpha\in G(\sigma)$ if and only if $\sigma\in\Lambda_\alpha$.
+
+Let $h_1,\ldots,h_{s(\alpha)}$ be the collection of elements of the set $\{S_{\sigma(0)},S_{\sigma(1)}:\sigma\in\Lambda_\alpha\}$ listed in increasing order.
+We set
+\begin{equation*}
+    \mathcal{F}_\alpha=\{[h_j,h_{j+1}]:1\leq j\leq s(\alpha)-1\text{ and }(h_j,h_{j+1})\cap K\neq\emptyset\}
+\end{equation*}
+Elements of $\mathcal{F}_\alpha$ are called \mbf{net intervals of generation $n$}.
+\begin{definition}
+    A pair $(a,L)$ is a \textbf{neighbour} of $\Delta\in\mathcal{F}_n$ if there is some $\sigma\in\Lambda_\alpha$ such that $S_\sigma(0,1)\cap\Delta\neq\emptyset$, $\lambda(\Delta)^{-1}r_\sigma=L$, and $\lambda(\Delta)^{-1}(a-S_\sigma(0))=a$, and we say that $\sigma$ \textbf{generates} the neighbour $(a,L)$.
+    Then the \textbf{neighbour set} of $\Delta$ is the ordered tuple
+    \begin{equation*}
+        V_\alpha(\Delta)=((a_1,L_1),\ldots,(a_j,L_j))
+    \end{equation*}
+    where each $(a_i,L_i)$ is a (distinct) neighbour of $\Delta$.
+    We order these tuples so that $a_i\leq a_{i+1}$ and if $a_i=a_{i+1}$, then $L_i<L_{i+1}$.
+\end{definition}
+\begin{definition}
+    We say that the IFS $\{S_i\}_{i=1}^\infty$ is \textbf{finite type} if there are only finitely many neighbourhood sets.
+\end{definition}
+We can generalize the notion of generation to net intervals.
+Let $\Delta\in\mathcal{F}_\alpha$ have neighbour set $((a_1,L_1),\ldots,(a_j,L_j))$.
+For each $i$, let $\sigma_i$ generate $(a_i,L_i)$.
+Then we call
+\begin{equation*}
+    G(\Delta)=\bigcap_{i=1}^j G(\sigma_i)
+\end{equation*}
+the \textbf{generation} of some $\Delta\in\mathcal{F}_\alpha$.
+Note that
+\begin{enumerate}[nl,r]
+    \item $\alpha\in G(\Delta)$
+    \item For any $\beta\in G(\Delta)$, $\Delta\in\mathcal{F}_\beta$ and $V_\beta(\Delta)=V_\alpha(\Delta)$
+    \item If $\gamma\notin G(\Delta)$, either $\Delta\notin\mathcal{F}_\gamma$ or $V_\gamma(\Delta)\neq V_\alpha(\Delta)$.
+\end{enumerate}
+Write $G(\Delta)=[|r_{\sigma_u}|,|r_{\sigma_v^-}|)$ and let $\omega$ such that $\sigma_i\preccurlyeq\omega$ for some $i$, $|r_\omega|<|r_{\sigma_u}|$, and $\gamma:=|r_\omega|$ is maximal.
+
+Let $\Delta$ have children $(\Delta_1,\ldots,\Delta_n)\in\mathcal{F}_\gamma$.
+Note that either $n>1$ or if $n=1$, then $V_\alpha(\Delta)\neq V_\gamma(\Delta_1)$.
+Furthermore, if $\gamma\leq\gamma'<|r_{\sigma_u}|$ is arbitrary and $\Delta$ has children $(\Delta'_1,\ldots,\Delta'_{n'})$ in $\mathcal{F}_{\gamma'}$, then $n=n'$ and $\Delta'_i=\Delta_i$ for each $i=1,\ldots,n$.
+We call the tuple $(\Delta_1,\ldots,\Delta_n)$ the \textbf{immediate children} of $\Delta\in\mathcal{F}_\alpha$.
+\begin{definition}
+    Suppose $\Delta\in\mathcal{F}_\alpha$ has immediate children $(\Delta_1,\ldots,\Delta_n)$ in generation $\gamma$.
+    Write $\Delta_i=[a_i,a_i+L_i]$.
+    We define the \textbf{characteristic} of $\Delta$, denoted $\mathcal{C}_\alpha(\Delta)$, to be the tuple
+    \begin{equation*}
+        \bigl((a_1,\lambda(\Delta)^{-1}L_1,V_\gamma(\Delta_1)),\ldots,(a_n,\lambda(\Delta)^{-1}L_n,V_\gamma(\Delta_n))\bigr)
+    \end{equation*}
+\end{definition}
+From the definition of finite type, one can see that there are only finitely many possible characteristics.
+Intuitively, the characteristic defines how $\Delta$ transitions from one generation to the next.
+\begin{remark}
+    To compute the immediate children, it is not sufficient to consider $\gamma=|r_i|\alpha$ for some $0\leq i \leq k$.
+    For example, in the main IFS example, take $\Delta=[4/15, 1/3]\in\mathcal{F}_\alpha$ where $\alpha=1/3$.
+    Now $\Delta\in \mathcal{F}_{1/5}$, but has different neighbour set, and $\Delta\notin\mathcal{F}_{1/9}$ at all.
+    However, the largest possible value of $|r_i|$ misses the immediate children.
+\end{remark}
+\subsection{Main Example}
+The governing example throughout this section is the IFS given by
+\begin{align*}
+    S_0(x)&=\frac{1}{3}x & S_1(x) &= \frac{1}{5}x+\frac{4}{15}\\
+    S_2(x) &= \frac{1}{3}x+\frac{7}{15} & S_3(x) &= \frac{1}{5}x+\frac{4}{5}
+\end{align*}
+which is perhaps better summarized by the diagram $S_i[0,1]$ for $i=0,\ldots,3$:
+\begin{center}
+    \begin{tikzpicture}[xscale=14,yscale=0.3]
+        \foreach \x/\y/\ctr/\lep/\rep in {0/.333333333/0/0/\frac{1}{3},.466666667/.8/2/\frac{7}{15}/\frac{4}{5},.8/1/3/\,/1} {
+            \draw[thick] (\x,1) -- node[above]{$S_{\ctr}[0,1]$}(\y,1);
+            \draw[thick] (\x,1-0.2) -- (\x,1+0.2) node[above,scale=0.7]{$\lep$};
+            \draw[thick] (\y,1-0.2) -- (\y,1+0.2) node[above,scale=0.7]{$\rep$};
+        }
+        \foreach \x/\y/\ctr/\lep/\rep in {.266666667/.466666667/1/\frac{4}{15}/\,} {
+            \draw[thick] (\x,0) -- node[below]{$S_{\ctr}[0,1]$} (\y,0);
+            \draw[thick] (\x,-0.2) node[below,scale=0.7]{$\lep$} -- (\x,0.2);
+            \draw[thick] (\y,-0.2) node[below,scale=0.7]{$\rep$} -- (\y,0.2);
+        }
+    \end{tikzpicture}
+\end{center}
+\subsection{Fundamental Properties of Finite Type}
+Here are some properties of the generations $\{\Lambda_\alpha\}_{0<\alpha<1}$.
+\begin{proposition}\label{p:gfin}
+    Let $0<\alpha<\beta<1$.
+    \begin{enumerate}[nl,r]
+        \item $\mathcal{F}_\alpha\neq\mathcal{F}_\beta$ if and only if there exists some $a_i\in\{0\}\cup\N$ such that $\rho:=\prod_{i=0}^k |r_i|^{a_i}$ satisfies $\alpha\leq\rho<\beta$.
+        \item If $\sigma$ is any infinite word, there exists a unique $i_\alpha$ such that $(\sigma_1,\ldots,\sigma_{i_\alpha})\in\Lambda_\alpha$.
+            In particular, when $\alpha<\beta$, $i_\alpha\geq i_\beta$.
+    \end{enumerate}
+\end{proposition}
+\begin{proof}
+    Recall that $\sigma\in\Lambda_\alpha$ for any $\alpha\in[|r_\sigma|,|r_{\sigma^-}|)$.
+    This is sufficient for the forward implication of (i) and (ii).
+
+    To see the reverse implication of (i), suppose such a $\rho$ exists and let $\omega$ be a word such that $|r_\omega|=\rho$.
+    Let $\sigma$ be a prefix of $\omega$ such that $\sigma\in\Lambda_\beta$; then since $\omega\notin\Lambda_\alpha$, $\sigma\notin\Lambda_\alpha$ as well.
+    Let $i$ be such that $|r_i|$ is minimal, and fix $\tau=\sigma i\ldots i$ be such that $\tau\in\Lambda_\alpha$.
+    TODO...I am pretty sure this is true.
+    Definitely true that the neighbour types of the new generation are different, even if the intervals are the same.
+\end{proof}
+\begin{remark}
+    One way to think about the immediate children of an interval as follows.
+    Enumerate the points $\left\{\prod_{i=0}^k|r_i|^{a_i}:a_i\in\{0\}\cup\N\right\}$ in decreasing order $(\rho_i)_{i=1}^\infty$.
+    As in \cref{p:gfin}, the $\mathcal{F}_\alpha$ change on transitions of intervals $[\rho_{i+1},\rho_{i})$, but the $\Delta$ may be in both generations, and have the same neighbourhood type.
+\end{remark}
+TODO: is this actually necessary?
+We could just use the generations $\rho_i$; even though some transitions will just be the identity map, it doesn't really matter.
+Need to think which will lead to more predictable symbolic representations (eg. for proof of below).
+\begin{proposition}
+    Let $0<\alpha<1$ and suppose $\Delta\in\mathcal{F}_\alpha$ has characteristic $\mathcal{C}_\alpha(\Delta)$.
+    Let $\Delta$ have immediate children $(\Delta_1,\ldots,\Delta_n)$.
+    Then the characteristic of any $\Delta_i$ depends only on $\mathcal{C}_\alpha(\Delta)$.
+\end{proposition}
+
+\section{Transition Matrices}
+Let $0<\alpha<\beta<1$ be arbitrary and suppose $\Delta=[a,b]\in\mathcal{F}_\alpha$ is arbitrary.
+Let $\widehat\Delta=[c,d]\in\mathcal{F}_\beta$ be the parent of $\Delta$, and suppose
+\begin{align*}
+    V_\alpha(\Delta) &= ((a_1,L_1),\ldots,(a_I,L_I))\\
+    V_\beta(\Delta) &= ((c_1,M_1),\ldots,(c_I,M_J))
+\end{align*}
+Then the \textbf{transition matrix} $T_{\beta\to\alpha}(\Delta)$ is the $I\times J$ matrix defined as follows for fixed $i,j$.
+Let $\sigma\in\Lambda_\beta$ such that $S_\sigma(x)=\lambda(\widehat\Delta)\cdot (M_jx-c_j)+c$.
+Then $T_{ij}=\sum_{\omega\in S}p_\omega$ where
+\begin{equation*}
+    S=\{\omega:\sigma\omega\in\Lambda_\alpha\text{ and }S_{\sigma\omega}(x)=\lambda(\Delta)\cdot(L_ix-a_i)+a\}
+\end{equation*}
+and the empty sum is understood to be 0.
+It is straightforward to see that transition matrices are well-defined, since if $\sigma$ and $\sigma'$ satisfy $S_\sigma(x)=S_{\sigma'}(x)$, then $S_{\sigma\omega}(x)=S_{\sigma'\omega}(x)$ for any word $\omega$.
+\section{Misc ideas}
+\begin{proposition}[Properties of Transition Matrices]
+    The following hold:
+    \begin{enumerate}[nl,r]
+        \item Suppose $0<\alpha<\gamma<\beta<1$ and $\Delta\in\mathcal{F}_\alpha$ has parent $\widehat\Delta\in\mathcal{F}_\gamma$.
+            Then $T_{\beta\to\alpha}(\Delta)=T_{\beta\to\gamma}(\widehat\Delta)\cdot T_{\gamma\to\alpha}(\Delta)$.
+    \end{enumerate}
+\end{proposition}
+% \begin{proposition}
+    % What is
+    % \begin{equation*}
+        % \limsup_{\alpha\to 0}\frac{\min\{\lambda(I):I\in\mathcal{F}_\alpha\}}{\alpha}
+    % \end{equation*}
+% \end{proposition}
+\begin{proposition}
+    Let $0<\alpha<1$ and $\Delta\in\mathcal{F}_\alpha$ arbitrary.
+    Let $r=|r_i|$ for some $i$, so that $\Delta$ has children $(\Delta_1,\ldots,\Delta_n)$ ordered left to right in $\mathcal{F}_{r\alpha}$.
+    Then the sequence $(\mu(\Delta_i),V_{r\alpha}(\Delta_i))_{i=1}^n$ depends only on $\alpha$, $\lambda(\Delta)$ and $V_\alpha(\Delta)$.
+\end{proposition}
+\begin{remark}
+    One might hope to drop the requirement on knowing $\alpha$; however, this does not hold if so.
+    However, this is may be sufficient to prove that there are only finitely many types:
+\end{remark}
+\begin{proposition}[Bounds on Interval Width]
+    \begin{enumerate}[nl,r]
+        \item There exists a constant $M\geq 1$ such that for any $0<\alpha<1$ and $\Delta\in\mathcal{F}_\alpha$, \begin{equation*} \frac{1}{M}\leq \frac{\lambda(\Delta)}{\alpha}\leq 1 \end{equation*}
+        \item There exists a constant $M\geq 1$ such that for any $0<\alpha<1$, for any $\Delta\in\mathcal{F}_\alpha$ with neighbours $\Delta^-$ and $\Delta^+$,
+            \begin{equation*}
+                \frac{1}{M}\leq \frac{\lambda(\Delta)}{\lambda(\Delta^-)}\leq M\text{ and } \frac{1}{M}\leq \frac{\lambda(\Delta)}{\lambda(\Delta^+)}\leq M.
+            \end{equation*}
+    \end{enumerate}
+\end{proposition}
+\begin{proof}
+    \begin{enumerate}[nl,r]
+        \item Let $S\subseteq\Lambda_\alpha$ denote the set of words such that for any $\sigma\in S$, $\Delta\subseteq S_\sigma[0,1]$.
+            By definition of finite type, $\lambda(\Delta)^{-1}r_\sigma$ takes one of finitely many values $L_i$; let $\lambda(\Delta)^{-1}r_\omega=L$ denote the maximum of such values.
+            Then $\lambda(\Delta)\geq r_\omega/L$, so that
+            \begin{equation*}
+                \frac{1}{r_{\max}L}\leq \frac{r_\omega}{L\alpha}\leq \frac{\lambda(\Delta)}{\alpha}
+            \end{equation*}
+            where $r_{\max}=\max_{0\leq i\leq m}|r_i|$.
+            The upper inequality follows since $r_\sigma/\alpha\leq 1$ for any $\sigma\in\Lambda_\alpha$.
+        \item Immediate from (i).
+    \end{enumerate}
+\end{proof}
+Note: there are infinitely many normalized lengths possible (even when normalizing with a value of $\prod_{i=0}^m|r_i|^{a_i}$).
+
+How hard to characterize transition maps $\Lambda_\alpha\to\Lambda_{r_i\alpha}$?
+If there are only finitely many such transitions, we have finiteness requirement.
+
+May need to do some sort of local argument?
+Fix a value of $x$, and consider a monotonic sequence $(\alpha_i)_{i=1}^\infty$ with $0<\alpha_i<1$ and $(\alpha_i)\to 0$.
+Then look at the sequence of character.
+
+How hard to prove that something is actually finite type?
+\end{document}
+

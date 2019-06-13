@@ -258,7 +258,7 @@
 \chapterstyle{verville}
 
 % Page Headers / Footers
-\setsecnumdepth{section}
+\setsecnumdepth{subsection}
 \copypagestyle{myruled}{ruled} % Draw formatting from existing 'ruled' style
 \makeoddhead{myruled}{}{}{\scshape\subject}
 \makeevenfoot{myruled}{}{\thepage}{}
@@ -371,7 +371,7 @@ Throughout, we let $\lambda$ denote the Lebesgue measure on $\R$.
     \end{equation*}
     with $k\geq 1$ and $0<|r_i|<1$.
 \end{definition}
-Each IFS generates a unique invariant compact set $K$, known as its associated self-similar set, satisfying
+Each IFS generates a unique invariant compact set $K$, known as its associated \textbf{self-similar set}, satisfying
 \begin{equation*}
     K=\bigcup_{j=0}^kS_j(K).
 \end{equation*}
@@ -393,13 +393,15 @@ and similarly,
 \begin{align*}
     r_\sigma = \prod_{i=1}^j r_{\sigma_i}\text{ and }p_\sigma = \prod_{i=1}^j p_{\sigma_i}.
 \end{align*}
+Additionally, we set $r_{\max}=\max_{i}|r_i|$.
 
-For any $0<\alpha<1$, we define the family
+\subsection{Generations}
+For any $0<\alpha\leq 1$, we define the family
 \begin{equation*}
-    \Lambda_\alpha=\{\sigma\in\Sigma^*:|r_\sigma|\leq\alpha<|r_{\sigma^-}|\}
+    \Lambda_\alpha=\{\sigma\in\Sigma^*:|r_\sigma|<\alpha\leq|r_{\sigma^-}|\}
 \end{equation*}
 called the \mbf{words of generation $\alpha$}.
-Given a word $\sigma$, we say that the \textbf{generation} $G(\sigma)$ is the interval $[r_\sigma,r_{\sigma^-})$.
+Given a word $\sigma$, we say that the \textbf{generation} $G(\sigma)$ is the interval $(|r_\sigma|,|r_{\sigma^-}|]$.
 By definition $\alpha\in G(\sigma)$ if and only if $\sigma\in\Lambda_\alpha$.
 
 Let $h_1,\ldots,h_{s(\alpha)}$ be the collection of elements of the set $\{S_{\sigma(0)},S_{\sigma(1)}:\sigma\in\Lambda_\alpha\}$ listed in increasing order.
@@ -407,9 +409,9 @@ We set
 \begin{equation*}
     \mathcal{F}_\alpha=\{[h_j,h_{j+1}]:1\leq j\leq s(\alpha)-1\text{ and }(h_j,h_{j+1})\cap K\neq\emptyset\}
 \end{equation*}
-Elements of $\mathcal{F}_\alpha$ are called \mbf{net intervals of generation $n$}.
+Elements of $\mathcal{F}_\alpha$ are called \mbf{net intervals of generation $\alpha$}.
 \begin{definition}
-    A pair $(a,L)$ is a \textbf{neighbour} of $\Delta\in\mathcal{F}_n$ if there is some $\sigma\in\Lambda_\alpha$ such that $S_\sigma(0,1)\cap\Delta\neq\emptyset$, $\lambda(\Delta)^{-1}r_\sigma=L$, and $\lambda(\Delta)^{-1}(a-S_\sigma(0))=a$, and we say that $\sigma$ \textbf{generates} the neighbour $(a,L)$.
+    A pair $(a,L)$ is a \textbf{neighbour} of $\Delta=[a_0,b_0]\in\mathcal{F}_n$ if there is some $\sigma\in\Lambda_\alpha$ such that $S_\sigma(0,1)\cap\Delta\neq\emptyset$, $\lambda(\Delta)^{-1}r_\sigma=L$, and $\lambda(\Delta)^{-1}(a_0-S_\sigma(0))=a$, and we say that $\sigma$ \textbf{generates} the neighbour $(a,L)$.
     Then the \textbf{neighbour set} of $\Delta$ is the ordered tuple
     \begin{equation*}
         V_\alpha(\Delta)=((a_1,L_1),\ldots,(a_j,L_j))
@@ -417,9 +419,8 @@ Elements of $\mathcal{F}_\alpha$ are called \mbf{net intervals of generation $n$
     where each $(a_i,L_i)$ is a (distinct) neighbour of $\Delta$.
     We order these tuples so that $a_i\leq a_{i+1}$ and if $a_i=a_{i+1}$, then $L_i<L_{i+1}$.
 \end{definition}
-\begin{definition}
-    We say that the IFS $\{S_i\}_{i=1}^\infty$ is \textbf{finite type} if there are only finitely many neighbourhood sets.
-\end{definition}
+Abusing notation slightly, we say that $\mathcal{F}_\alpha\neq\mathcal{F}_\beta$ if either the net intervals are distinct, or if they are the same, then the neighbour set of some net interval is different.
+(TODO: is this actually abusing notation? Or are the notions equivalent?)
 We can generalize the notion of generation to net intervals.
 Let $\Delta\in\mathcal{F}_\alpha$ have neighbour set $((a_1,L_1),\ldots,(a_j,L_j))$.
 For each $i$, let $\sigma_i$ generate $(a_i,L_i)$.
@@ -434,125 +435,131 @@ Note that
     \item For any $\beta\in G(\Delta)$, $\Delta\in\mathcal{F}_\beta$ and $V_\beta(\Delta)=V_\alpha(\Delta)$
     \item If $\gamma\notin G(\Delta)$, either $\Delta\notin\mathcal{F}_\gamma$ or $V_\gamma(\Delta)\neq V_\alpha(\Delta)$.
 \end{enumerate}
-Write $G(\Delta)=[|r_{\sigma_u}|,|r_{\sigma_v^-}|)$ and let $\omega$ such that $\sigma_i\preccurlyeq\omega$ for some $i$, $|r_\omega|<|r_{\sigma_u}|$, and $\gamma:=|r_\omega|$ is maximal.
 
+\subsection{Transition Types}
+Let $0<\alpha\leq 1$ and $\Delta\in\mathcal{F}_\alpha$ and suppose $\Delta$ has neighbour set $((a_1,L_1),\ldots,(a_n,L_n))$
+Set
+\begin{equation*}
+    L_{\max}=\max\{|L_i|:i=1,\ldots,n\}\text{ and }\gamma = \lambda(\Delta)\cdot L_{\max};
+\end{equation*}
+in other words, $\gamma$ is the largest value achieved by $|r_\sigma|$ where $\sigma$ generates some neighbour of $\Delta$.
 Let $\Delta$ have children $(\Delta_1,\ldots,\Delta_n)\in\mathcal{F}_\gamma$.
-Note that either $n>1$ or if $n=1$, then $V_\alpha(\Delta)\neq V_\gamma(\Delta_1)$.
-Furthermore, if $\gamma\leq\gamma'<|r_{\sigma_u}|$ is arbitrary and $\Delta$ has children $(\Delta'_1,\ldots,\Delta'_{n'})$ in $\mathcal{F}_{\gamma'}$, then $n=n'$ and $\Delta'_i=\Delta_i$ for each $i=1,\ldots,n$.
-We call the tuple $(\Delta_1,\ldots,\Delta_n)$ the \textbf{immediate children} of $\Delta\in\mathcal{F}_\alpha$.
+As in the proof of \cref{p:gfin}, we see that either $n>1$ or if $n=1$, then $V_\alpha(\Delta)\neq V_\gamma(\Delta_1)$.
+We call the tuple $(\Delta_1,\ldots,\Delta_n)$ the \textbf{children} of $\Delta\in\mathcal{F}_\alpha$.
+Note that it suffices to take any $\gamma'$ such that
+\begin{equation*}
+    \min\bigl\{r_{\max}\gamma,\lambda(\Delta)\cdot\max\{|L_i|:i=1,\ldots,n; |L_i|\neq L_{\max}\}\bigr\}<\gamma'\leq\gamma
+\end{equation*}
+where the inner maximum is taken to be 0 if the set is empty.
 \begin{definition}
-    Suppose $\Delta\in\mathcal{F}_\alpha$ has immediate children $(\Delta_1,\ldots,\Delta_n)$ in generation $\gamma$.
+    Suppose $\Delta=[a,b]\in\mathcal{F}_\alpha$ has children $(\Delta_1,\ldots,\Delta_n)$ in generation $\gamma$.
     Write $\Delta_i=[a_i,a_i+L_i]$.
-    We define the \textbf{characteristic} of $\Delta$, denoted $\mathcal{C}_\alpha(\Delta)$, to be the tuple
+    We define the \textbf{transition type} of $\Delta$, denoted $\mathcal{C}_\alpha(\Delta)$, to be the tuple
     \begin{equation*}
-        \bigl((a_1,\lambda(\Delta)^{-1}L_1,V_\gamma(\Delta_1)),\ldots,(a_n,\lambda(\Delta)^{-1}L_n,V_\gamma(\Delta_n))\bigr)
+        \left(\bigl(\frac{a_1-a}{\lambda(\Delta)},\frac{L_1}{\lambda(\Delta)},V_\gamma(\Delta_1)\bigr),\ldots,\bigl(\frac{a_n-a}{\lambda(\Delta)},\frac{L_n}{\lambda(\Delta)},V_\gamma(\Delta_n)\bigr)\right)
     \end{equation*}
 \end{definition}
-From the definition of finite type, one can see that there are only finitely many possible characteristics.
-Intuitively, the characteristic defines how $\Delta$ transitions from one generation to the next.
 \begin{remark}
-    To compute the immediate children, it is not sufficient to consider $\gamma=|r_i|\alpha$ for some $0\leq i \leq k$.
+    To compute the children, it is not sufficient to consider $\gamma=|r_i|\alpha$ for some $0\leq i \leq k$.
     For example, in the main IFS example, take $\Delta=[4/15, 1/3]\in\mathcal{F}_\alpha$ where $\alpha=1/3$.
     Now $\Delta\in \mathcal{F}_{1/5}$, but has different neighbour set, and $\Delta\notin\mathcal{F}_{1/9}$ at all.
-    However, the largest possible value of $|r_i|$ misses the immediate children.
+    However, the largest possible value of $|r_i|$ misses the children.
 \end{remark}
-\subsection{Main Example}
-The governing example throughout this section is the IFS given by
-\begin{align*}
-    S_0(x)&=\frac{1}{3}x & S_1(x) &= \frac{1}{5}x+\frac{4}{15}\\
-    S_2(x) &= \frac{1}{3}x+\frac{7}{15} & S_3(x) &= \frac{1}{5}x+\frac{4}{5}
-\end{align*}
-which is perhaps better summarized by the diagram $S_i[0,1]$ for $i=0,\ldots,3$:
-\begin{center}
-    \begin{tikzpicture}[xscale=14,yscale=0.3]
-        \foreach \x/\y/\ctr/\lep/\rep in {0/.333333333/0/0/\frac{1}{3},.466666667/.8/2/\frac{7}{15}/\frac{4}{5},.8/1/3/\,/1} {
-            \draw[thick] (\x,1) -- node[above]{$S_{\ctr}[0,1]$}(\y,1);
-            \draw[thick] (\x,1-0.2) -- (\x,1+0.2) node[above,scale=0.7]{$\lep$};
-            \draw[thick] (\y,1-0.2) -- (\y,1+0.2) node[above,scale=0.7]{$\rep$};
-        }
-        \foreach \x/\y/\ctr/\lep/\rep in {.266666667/.466666667/1/\frac{4}{15}/\,} {
-            \draw[thick] (\x,0) -- node[below]{$S_{\ctr}[0,1]$} (\y,0);
-            \draw[thick] (\x,-0.2) node[below,scale=0.7]{$\lep$} -- (\x,0.2);
-            \draw[thick] (\y,-0.2) node[below,scale=0.7]{$\rep$} -- (\y,0.2);
-        }
-    \end{tikzpicture}
-\end{center}
-\subsection{Fundamental Properties of Finite Type}
-Here are some properties of the generations $\{\Lambda_\alpha\}_{0<\alpha<1}$.
+\subsection{Basic Properties of IFS}
+Here are some properties of the generations $\{\Lambda_\alpha\}_{0<\alpha\leq 1}$.
 \begin{proposition}\label{p:gfin}
-    Let $0<\alpha<\beta<1$.
+    Let $0<\alpha<\beta\leq 1$.
     \begin{enumerate}[nl,r]
-        \item $\mathcal{F}_\alpha\neq\mathcal{F}_\beta$ if and only if there exists some $a_i\in\{0\}\cup\N$ such that $\rho:=\prod_{i=0}^k |r_i|^{a_i}$ satisfies $\alpha\leq\rho<\beta$.
-        \item If $\sigma$ is any infinite word, there exists a unique $i_\alpha$ such that $(\sigma_1,\ldots,\sigma_{i_\alpha})\in\Lambda_\alpha$.
+        \item $\mathcal{F}_\alpha\neq\mathcal{F}_\beta$ if and only if there exists some $a_i\in\{0\}\cup\N$ such that $\rho:=\prod_{i=0}^k |r_i|^{a_i}$ satisfies $\alpha<\rho\leq\beta$.
+        \item If $\sigma$ is any infinite word, there exists a unique index $i_\alpha$ such that $(\sigma_1,\ldots,\sigma_{i_\alpha})\in\Lambda_\alpha$.
             In particular, when $\alpha<\beta$, $i_\alpha\geq i_\beta$.
     \end{enumerate}
 \end{proposition}
 \begin{proof}
-    Recall that $\sigma\in\Lambda_\alpha$ for any $\alpha\in[|r_\sigma|,|r_{\sigma^-}|)$.
+    Recall that $\sigma\in\Lambda_\alpha$ for any $\alpha\in(|r_\sigma|,|r_{\sigma^-}|]$.
     This is sufficient for the forward implication of (i) and (ii).
 
     To see the reverse implication of (i), suppose such a $\rho$ exists and let $\omega$ be a word such that $|r_\omega|=\rho$.
     Let $\sigma$ be a prefix of $\omega$ such that $\sigma\in\Lambda_\beta$; then since $\omega\notin\Lambda_\alpha$, $\sigma\notin\Lambda_\alpha$ as well.
-    Let $i$ be such that $|r_i|$ is minimal, and fix $\tau=\sigma i\ldots i$ be such that $\tau\in\Lambda_\alpha$.
-    TODO...I am pretty sure this is true.
-    Definitely true that the neighbour types of the new generation are different, even if the intervals are the same.
+    Let $\Delta\subseteq S_\sigma[0,1]$ with $\Delta\in\mathcal{F}_\alpha$ be any net interval, so that $\sigma$ generates some neighbour $(a,L)$ of $\Delta$ where $L=r_\sigma \lambda(\Delta)^{-1}$.
+    If $\Delta\notin\mathcal{F}_\beta$, we are done, so let's suppose $\Delta=\Delta'\in\mathcal{F}_\beta$.
+    Now suppose $(a',L')$ is any neighbour of $\Delta'$ generated by $\tau\in\Lambda_\beta$; it suffices to show that $(a',L')\neq(a,L)$.
+    Suppose $a=a'$; then if $\tau$ generates $(a',L')$, we have $\sigma\precurlyleq\tau$, and since $\sigma\in\Lambda_\alpha$ and $\tau\in\Lambda_\beta$ with $\Lambda_\alpha\neq\Lambda_\beta$, we have $r_\sigma\neq r_\tau$ so $L\neq L'$.
 \end{proof}
 \begin{remark}
-    One way to think about the immediate children of an interval as follows.
+    One way to think about the children of an interval as follows.
     Enumerate the points $\left\{\prod_{i=0}^k|r_i|^{a_i}:a_i\in\{0\}\cup\N\right\}$ in decreasing order $(\rho_i)_{i=1}^\infty$.
-    As in \cref{p:gfin}, the $\mathcal{F}_\alpha$ change on transitions of intervals $[\rho_{i+1},\rho_{i})$, but the $\Delta$ may be in both generations, and have the same neighbourhood type.
+    As in \cref{p:gfin}, the $\mathcal{F}_\alpha$ change on transitions of intervals $[\rho_{i+1},\rho_{i})$.
+    However, if $\Delta\in\mathcal{F}_\alpha$ with $\alpha\in[\rho_{k+1},\rho_k)$, it may be that $\Delta\in \mathcal{F}_\beta$ for any $\beta\in[\rho_{k+2},\rho_{k+1})$, with $V_\beta(\Delta)=V_\alpha(\Delta)$.
+    The children are the net intervals in generation $\rho_{m}$ where $m> k+1$ is minimal such that either $\Delta\notin\mathcal{F}_{\rho_m}$ or $V_{\rho_m}(\Delta)\neq V_\alpha(\Delta)$.
 \end{remark}
-TODO: is this actually necessary?
-We could just use the generations $\rho_i$; even though some transitions will just be the identity map, it doesn't really matter.
-Need to think which will lead to more predictable symbolic representations (eg. for proof of below).
-\begin{proposition}
-    Let $0<\alpha<1$ and suppose $\Delta\in\mathcal{F}_\alpha$ has characteristic $\mathcal{C}_\alpha(\Delta)$.
-    Let $\Delta$ have immediate children $(\Delta_1,\ldots,\Delta_n)$.
-    Then the characteristic of any $\Delta_i$ depends only on $\mathcal{C}_\alpha(\Delta)$.
+\begin{proposition}\label{p:ttype}
+    Consider the IFS $\{S_i\}_{i=0}^m$ and let $0<\alpha\leq 1$.
+    Then $\mathcal{C}_\alpha(\Delta)$ depends only on the neighbour set $V_\alpha(\Delta)$.
 \end{proposition}
-
-\section{Transition Matrices}
-Let $0<\alpha<\beta<1$ be arbitrary and suppose $\Delta=[a,b]\in\mathcal{F}_\alpha$ is arbitrary.
-Let $\widehat\Delta=[c,d]\in\mathcal{F}_\beta$ be the parent of $\Delta$, and suppose
-\begin{align*}
-    V_\alpha(\Delta) &= ((a_1,L_1),\ldots,(a_I,L_I))\\
-    V_\beta(\Delta) &= ((c_1,M_1),\ldots,(c_I,M_J))
-\end{align*}
-Then the \textbf{transition matrix} $T_{\beta\to\alpha}(\Delta)$ is the $I\times J$ matrix defined as follows for fixed $i,j$.
-Let $\sigma\in\Lambda_\beta$ such that $S_\sigma(x)=\lambda(\widehat\Delta)\cdot (M_jx-c_j)+c$.
-Then $T_{ij}=\sum_{\omega\in S}p_\omega$ where
-\begin{equation*}
-    S=\{\omega:\sigma\omega\in\Lambda_\alpha\text{ and }S_{\sigma\omega}(x)=\lambda(\Delta)\cdot(L_ix-a_i)+a\}
-\end{equation*}
-and the empty sum is understood to be 0.
-It is straightforward to see that transition matrices are well-defined, since if $\sigma$ and $\sigma'$ satisfy $S_\sigma(x)=S_{\sigma'}(x)$, then $S_{\sigma\omega}(x)=S_{\sigma'\omega}(x)$ for any word $\omega$.
-\section{Misc ideas}
-\begin{proposition}[Properties of Transition Matrices]
-    The following hold:
-    \begin{enumerate}[nl,r]
-        \item Suppose $0<\alpha<\gamma<\beta<1$ and $\Delta\in\mathcal{F}_\alpha$ has parent $\widehat\Delta\in\mathcal{F}_\gamma$.
-            Then $T_{\beta\to\alpha}(\Delta)=T_{\beta\to\gamma}(\widehat\Delta)\cdot T_{\gamma\to\alpha}(\Delta)$.
-    \end{enumerate}
-\end{proposition}
-% \begin{proposition}
-    % What is
-    % \begin{equation*}
-        % \limsup_{\alpha\to 0}\frac{\min\{\lambda(I):I\in\mathcal{F}_\alpha\}}{\alpha}
-    % \end{equation*}
-% \end{proposition}
-\begin{proposition}
-    Let $0<\alpha<1$ and $\Delta\in\mathcal{F}_\alpha$ arbitrary.
-    Let $r=|r_i|$ for some $i$, so that $\Delta$ has children $(\Delta_1,\ldots,\Delta_n)$ ordered left to right in $\mathcal{F}_{r\alpha}$.
-    Then the sequence $(\mu(\Delta_i),V_{r\alpha}(\Delta_i))_{i=1}^n$ depends only on $\alpha$, $\lambda(\Delta)$ and $V_\alpha(\Delta)$.
-\end{proposition}
+\begin{proof}
+    \textit{[Sketch.]}
+    Let $\Delta\in \mathcal{F}_\alpha$ have neighbour set $\bigl((a_1,L_1),\ldots,(a_n,L_n)\bigr)$ and let $\{i_1,\ldots,i_m\}$ be the set of indices such that $L_{i_1}=\cdots=L_{i_m}=:L$ are maximal.
+    Let $\gamma$ be such that $(\Delta_1,\ldots,\Delta_n)$ with $\Delta_i\in\mathcal{F}_\gamma$ are the children of $\Delta$.
+    Let $\Gamma\subseteq\Lambda_\alpha$ be the set of words which generate some $(a_{i_j},L_{i_j})$ for $1\leq j\leq m$.
+    Note the following facts:
+    \begin{itemize}[nl]
+        \item If $\sigma\in\Lambda_\alpha\setminus\Gamma$ has $S_\sigma[0,1]\supseteq\Delta$, then $\sigma\in\Lambda_\gamma$
+        \item If $\sigma\in\Gamma$, then $\sigma\notin\Lambda_\gamma$ but $\sigma l\in\Lambda_\gamma$ for any $0\leq l\leq m$.
+    \end{itemize}
+    But then the words $\tau\in\Lambda_\gamma$ such that $S_\tau[0,1]\supseteq\Delta$ are precisely the words
+    \begin{equation*}
+        \tau \in\Lambda_\alpha\setminus\Gamma\text{ with } S_\tau[0,1]\supseteq\Delta
+    \end{equation*}
+    or
+    \begin{equation*}
+        \tau=\sigma l\text{ with }\sigma\in\Gamma\text{ and }l\in\{0,\ldots,k\}.
+    \end{equation*}
+    Thus the set $\{\tau\in\Lambda_\gamma:S_\tau[0,1]\supseteq\Delta\}$ depends only on $V_\alpha(\Delta)$, which fully determines $C_\alpha(\Delta)$.
+\end{proof}
+\subsection{Iterated Function Systems of Finite Type}
+\begin{definition}
+    We say that the IFS $\{S_i\}_{i=0}^k$ is \textbf{finite type} if there are only finitely many neighbourhood sets.
+\end{definition}
+\begin{example}
+    The governing example throughout this section is the IFS given by
+    \begin{align*}
+        S_0(x)&=\frac{1}{3}x & S_1(x) &= \frac{1}{5}x+\frac{4}{15}\\
+        S_2(x) &= \frac{1}{3}x+\frac{7}{15} & S_3(x) &= \frac{1}{5}x+\frac{4}{5}
+    \end{align*}
+    which is perhaps better summarized by the diagram $S_i[0,1]$ for $i=0,\ldots,3$:
+    \begin{center}
+        \begin{tikzpicture}[xscale=14,yscale=0.3]
+            \foreach \x/\y/\ctr/\lep/\rep in {0/.333333333/0/0/\frac{1}{3},.466666667/.8/2/\frac{7}{15}/\frac{4}{5},.8/1/3/\,/1} {
+                \draw[thick] (\x,1) -- node[above]{$S_{\ctr}[0,1]$}(\y,1);
+                \draw[thick] (\x,1-0.2) -- (\x,1+0.2) node[above,scale=0.7]{$\lep$};
+                \draw[thick] (\y,1-0.2) -- (\y,1+0.2) node[above,scale=0.7]{$\rep$};
+            }
+            \foreach \x/\y/\ctr/\lep/\rep in {.266666667/.466666667/1/\frac{4}{15}/\,} {
+                \draw[thick] (\x,0) -- node[below]{$S_{\ctr}[0,1]$} (\y,0);
+                \draw[thick] (\x,-0.2) node[below,scale=0.7]{$\lep$} -- (\x,0.2);
+                \draw[thick] (\y,-0.2) node[below,scale=0.7]{$\rep$} -- (\y,0.2);
+            }
+        \end{tikzpicture}
+    \end{center}
+\end{example}
+\begin{corollary}
+    $\{S_i\}_{i=0}^k$ is finite type if and only if there are finitely many transition types.
+\end{corollary}
+\begin{proof}
+    Follows from \cref{p:ttype}.
+\end{proof}
 \begin{remark}
-    One might hope to drop the requirement on knowing $\alpha$; however, this does not hold if so.
-    However, this is may be sufficient to prove that there are only finitely many types:
+    Computationally, one can prove that an IFS is of finite type as follows.
+    Starting with $\Delta=[0,1]$, the children $(\Delta_1,\ldots,\Delta_n)$ in generation $\gamma$ and their neighbour sets $V_\gamma(\Delta_1),\ldots,V_\gamma(\Delta_n)$.
+    Recursively repeat the process for any $\Delta_i$ in which $V_\gamma(\Delta_i)$ has not yet been observed.
+    If this process terminates, then the IFS is of finite type.
 \end{remark}
 \begin{proposition}[Bounds on Interval Width]
+    Let $\{S_i\}_{i=0}^m$ be an IFS of finite type.
     \begin{enumerate}[nl,r]
-        \item There exists a constant $M\geq 1$ such that for any $0<\alpha<1$ and $\Delta\in\mathcal{F}_\alpha$, \begin{equation*} \frac{1}{M}\leq \frac{\lambda(\Delta)}{\alpha}\leq 1 \end{equation*}
-        \item There exists a constant $M\geq 1$ such that for any $0<\alpha<1$, for any $\Delta\in\mathcal{F}_\alpha$ with neighbours $\Delta^-$ and $\Delta^+$,
+        \item There exists a constant $M\geq 1$ such that for any $0<\alpha\leq 1$ and $\Delta\in\mathcal{F}_\alpha$, \begin{equation*} \frac{1}{M}\leq \frac{\lambda(\Delta)}{\alpha}\leq 1 \end{equation*}
+        \item There exists a constant $M\geq 1$ such that for any $0<\alpha\leq 1$, for any $\Delta\in\mathcal{F}_\alpha$ with neighbours $\Delta^-$ and $\Delta^+$,
             \begin{equation*}
                 \frac{1}{M}\leq \frac{\lambda(\Delta)}{\lambda(\Delta^-)}\leq M\text{ and } \frac{1}{M}\leq \frac{\lambda(\Delta)}{\lambda(\Delta^+)}\leq M.
             \end{equation*}
@@ -571,7 +578,38 @@ It is straightforward to see that transition matrices are well-defined, since if
         \item Immediate from (i).
     \end{enumerate}
 \end{proof}
-Note: there are infinitely many normalized lengths possible (even when normalizing with a value of $\prod_{i=0}^m|r_i|^{a_i}$).
+\section{Transition Matrices}
+Let $0<\alpha<\beta\leq 1$ be arbitrary and suppose $\Delta=[a,b]\in\mathcal{F}_\alpha$ is arbitrary.
+Let $\widehat\Delta=[c,d]\in\mathcal{F}_\beta$ be the parent of $\Delta$, and suppose
+\begin{align*}
+    V_\alpha(\Delta) &= ((a_1,L_1),\ldots,(a_I,L_I))\\
+    V_\beta(\Delta) &= ((c_1,M_1),\ldots,(c_I,M_J))
+\end{align*}
+Then the \textbf{transition matrix} $T_{\beta\to\alpha}(\Delta)$ is the $I\times J$ matrix defined as follows for fixed $i,j$.
+Let $\sigma\in\Lambda_\beta$ such that $S_\sigma(x)=\lambda(\widehat\Delta)\cdot (M_jx-c_j)+c$.
+Then $T_{ij}=\sum_{\omega\in S}p_\omega$ where
+\begin{equation*}
+    S=\{\omega:\sigma\omega\in\Lambda_\alpha\text{ and }S_{\sigma\omega}(x)=\lambda(\Delta)\cdot(L_ix-a_i)+a\}
+\end{equation*}
+and the empty sum is understood to be 0.
+It is straightforward to see that transition matrices are well-defined, since if $\sigma$ and $\sigma'$ satisfy $S_\sigma(x)=S_{\sigma'}(x)$, then $S_{\sigma\omega}(x)=S_{\sigma'\omega}(x)$ for any word $\omega$.
+\begin{proposition}[Properties of Transition Matrices]
+    The following hold:
+    \begin{enumerate}[nl,r]
+        \item Suppose $0<\alpha<\gamma<\beta\leq 1$ and $\Delta\in\mathcal{F}_\alpha$ has parent $\widehat\Delta\in\mathcal{F}_\gamma$.
+            Then $T_{\beta\to\alpha}(\Delta)=T_{\beta\to\gamma}(\widehat\Delta)\cdot T_{\gamma\to\alpha}(\Delta)$.
+    \end{enumerate}
+\end{proposition}
+\section{Misc ideas}
+\begin{proposition}
+    Let $0<\alpha\leq 1$ and $\Delta\in\mathcal{F}_\alpha$ arbitrary.
+    Let $r=|r_i|$ for some $i$, so that $\Delta$ has children $(\Delta_1,\ldots,\Delta_n)$ ordered left to right in $\mathcal{F}_{r\alpha}$.
+    Then the sequence $(\mu(\Delta_i),V_{r\alpha}(\Delta_i))_{i=1}^n$ depends only on $\alpha$, $\lambda(\Delta)$ and $V_\alpha(\Delta)$.
+\end{proposition}
+\begin{remark}
+    One might hope to drop the requirement on knowing $\alpha$; however, this does not hold if so.
+    However, this is may be sufficient to prove that there are only finitely many types:
+\end{remark}
 
 How hard to characterize transition maps $\Lambda_\alpha\to\Lambda_{r_i\alpha}$?
 If there are only finitely many such transitions, we have finiteness requirement.

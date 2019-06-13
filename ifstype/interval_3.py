@@ -9,16 +9,19 @@ class IntervalSet:
         self.interval = interval
 
 # in order to suppose NetInterval objects, Intervals have an additional _param attribute that is never observed from outside
+# TODO: this is garbage, fix it
 class Interval(tuple):
     "A fast interval class"
-    n_args = 2
     a = property(operator.itemgetter(0))
     b = property(operator.itemgetter(1))
-    def __new__(cls,*args):
-        if args[0] is None or args[1] is None or args[0] > args[1]:
-            return super().__new__(cls,(None,None,*args[2:cls.n_args]))
+    def __new__(cls,a: typing.Optional[Rational] = None, b: typing.Optional[Rational] = None, _param: typing.Optional[Rational] = Rational(0)):
+        if a is None or b is None or a > b:
+            return super().__new__(cls,(None,None,_param))
         else:
-            return super().__new__(cls,args[:cls.n_args])
+            return super().__new__(cls,(a,b,_param))
+
+    def copy(self):
+        return Interval(self.a,self.b)
 
     def is_empty(self):
         return self.a is None and self.b is None
@@ -94,7 +97,7 @@ class Interval(tuple):
 
 class NetInterval(Interval):
     "A special interval type representing a net interval of generation alpha"
-    n_args=3
+    # TODO: fix persistent mutability of alpha
     alpha = property(operator.itemgetter(2))
     def __new__(cls,alpha,a,b):
         self = super().__new__(cls,a,b,alpha)

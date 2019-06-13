@@ -2,6 +2,9 @@ from sympy import Rational
 import operator
 import functools
 import itertools
+import typing
+from sortedcontainers import SortedList
+from functools import reduce
 
 from .interval import Interval
 
@@ -17,14 +20,12 @@ class Word:
         self.f = f
         self.r = f.r
 
-    def interval(self,iv=Interval(0,1)):
+    def interval(self,*args,**kwargs):
         "Create the interval associated with word"
-        left = self.f(iv.a)
-        right = self.f(iv.b)
-        if left <= right:
-            return Interval(left,right)
-        else:
-            return Interval(right,left)
+        return self.f.interval(*args,**kwargs)
+
+    def copy(self):
+        return Word(self.ab, self.rm, self.p, self.f)
 
     def __hash__(self):
         tup = (self.ab, self.f, self.rm, self.p)
@@ -54,15 +55,16 @@ class Word:
     # compute / evaluate generations
     def gen(self):
         return Interval(self.r,self.rm)
+
     def is_gen(self,alpha):
         "True if word is of generation alpha"
-        return self.r <= alpha and self.rm > alpha
+        return self.r < alpha and self.rm >= alpha
     def pre_gen(self,alpha):
         "True if word is not yet of generation alpha"
-        return self.r > alpha
+        return self.r >= alpha
     def post_gen(self,alpha):
         "True if word has proper prefix of generation alpha"
-        return self.rm <= alpha
+        return self.rm < alpha
 
     def diff(self, extension):
         "extension has self as a prefix. Get the part of extension not in self"
@@ -76,29 +78,55 @@ class Word:
             return Word(new_ab, new_rm, new_p, new_f)
 
 
-class CtrFunc:
-    def __init__(self, ctr, shift):
-        self.r = ctr
-        self.a = shift
+class CtrFunc(typing.NamedTuple):
+    r: Rational
+    a: Rational
 
     @classmethod
     def id(cls):
-        return cls(1,0)
+        return cls(Rational(1),Rational(0))
 
     def compose(self, ct_f):
         return CtrFunc(self.r*ct_f.r, self.a+self.r*ct_f.a)
 
+    def interval(self,iv=Interval(0,1)):
+        left = self(iv.a)
+        right = self(iv.b)
+        if left <= right:
+            return Interval(left,right)
+        else:
+            return Interval(right,left)
+
     def __call__(self, x):
         return self.r*x+self.a
-    def __hash__(self):
-        return hash((self.r,self.a))
     def __repr__(self):
         return "f:x*{}+{}".format(self.r,self.a)
     def __str__(self):
         return "f:x*{}+{}".format(self.r,self.a)
-    def __eq__(self,other):
-        return self.a == other.a and self.r == other.r
 
+# define a class containing constants
+def constant(f):
+    def fset(self, value):
+        raise AttributeError("Cannot change constant values")
+    def fget(self):
+        return f()
+    return property(fget, fset)
+
+class _Const:
+    @constant
+    def n_base():
+        return Rational(2)
+    @constant
+    def n_0():
+        return Rational(0)
+    @constant
+    def n_1():
+        return Rational(1)
+    @constant
+    def iv_0_1():
+        return Interval(Rational(0),Rational(1))
+
+C = _Const()
 
 class IFS:
     # an IFS is essentially a factory for words and ctr funcs
@@ -112,11 +140,18 @@ class IFS:
         self.r = [f.r for f in self.f]
         self.a = [f.a for f in self.f]
 
-        self.abs_rs = sorted(set(abs(r) for r in self.r))
-
         self.idx = tuple(range(len(funcs)))
-        self.ct = len(funcs)
-        self.rmin = min(self.r)
+        self.rmin = min(abs(r) for r in self.r)
+        self.rmax = max(abs(r) for r in self.r)
+
+    def transition_gens(self,start=1):
+        abs_r = sorted(set(abs(r)) for r in self.r)
+        jumps = map(lambda n:self.rmax**n,itertools.count(0))
+        sorted_r=SortedSet([])
+        for n,j in enumerate(jumps):
+            sorted_r.update(reduce(operator.mul,itertools.product(abs_r,repeat=n),1))
+            cur = sorted_r.pop()
+
 
     def __str__(self):
         return str((self.f,self.p))

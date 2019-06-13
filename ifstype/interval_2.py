@@ -8,17 +8,16 @@ class IntervalSet:
         # process intervals
         self.interval = interval
 
-# in order to suppose NetInterval objects, Intervals have an additional _param attribute that is never observed from outside
 class Interval(tuple):
     "A fast interval class"
-    n_args = 2
     a = property(operator.itemgetter(0))
     b = property(operator.itemgetter(1))
-    def __new__(cls,*args):
-        if args[0] is None or args[1] is None or args[0] > args[1]:
-            return super().__new__(cls,(None,None,*args[2:cls.n_args]))
+    def __new__(self,a: typing.Optional[Rational] = None, b: typing.Optional[Rational] = None):
+        if a is None or b is None or a > b:
+            return super().__new__(self,(None,None))
         else:
-            return super().__new__(cls,args[:cls.n_args])
+            return super().__new__(self,(a,b))
+
 
     def is_empty(self):
         return self.a is None and self.b is None
@@ -39,10 +38,6 @@ class Interval(tuple):
         return (not other.is_empty()) and self.a >= other.a and other.b >= self.b
     def supset(self, other):
         return other.is_empty() or (self.a <= other.a and other.b <= self.b)
-    def proper_subset(self,other):
-        return self.subset(other) and self != other
-    def proper_supset(self,other):
-        return self.supset(other) and self != other
 
     # representation
     def __str__(self):
@@ -83,8 +78,10 @@ class Interval(tuple):
         "intersection"
         if self.is_empty() or other.is_empty():
             return Interval()
+        elif self.a <= other.a:
+            return Interval(other.a,min(self.b,other.b))
         else:
-            return Interval(max(self.a,other.a),min(self.b,other.b))
+            return Interval(max(self.a,other.a),other.b)
 
     # caution! cannot support union
     def open_intersect(self,other):
@@ -94,15 +91,13 @@ class Interval(tuple):
 
 class NetInterval(Interval):
     "A special interval type representing a net interval of generation alpha"
-    n_args=3
-    alpha = property(operator.itemgetter(2))
-    def __new__(cls,alpha,a,b):
-        self = super().__new__(cls,a,b,alpha)
-        return self
-
+    def __new__(self,alpha,a,b):
+        self.alpha = alpha
+        return super().__new__(self,a,b)
     # representation
     def __str__(self):
         return "NetIv({})[{},{}]".format(self.alpha,self.a,self.b)
+
     def __repr__(self):
         return "NetIv({})[{},{}]".format(self.alpha,self.a,self.b)
 

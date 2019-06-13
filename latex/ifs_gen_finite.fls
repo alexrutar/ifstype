@@ -493,6 +493,9 @@ INPUT /usr/local/texlive/2018/texmf-dist/fonts/tfm/public/kpfonts/jkpmsc8r.tfm
 INPUT /usr/local/texlive/2018/texmf-dist/fonts/vf/public/kpfonts/jkpmit7t.vf
 INPUT /usr/local/texlive/2018/texmf-dist/fonts/tfm/public/kpfonts/jkpmite.tfm
 INPUT /usr/local/texlive/2018/texmf-dist/fonts/tfm/public/kpfonts/jkpmit8r.tfm
+INPUT /usr/local/texlive/2018/texmf-dist/fonts/tfm/public/kpfonts/jkpmn7c.tfm
+INPUT /usr/local/texlive/2018/texmf-dist/fonts/vf/public/kpfonts/jkpmn7c.vf
+INPUT /usr/local/texlive/2018/texmf-dist/fonts/tfm/public/kpfonts/jkpmnc.tfm
 INPUT /usr/local/texlive/2018/texmf-dist/fonts/tfm/public/kpfonts/jkpmit7t.tfm
 INPUT /usr/local/texlive/2018/texmf-dist/fonts/tfm/public/kpfonts/jkpmit7t.tfm
 OUTPUT ifs_gen_finite.thm

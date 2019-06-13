@@ -48,9 +48,9 @@ class Visual:
         self.gn = gn
 
     @draw
-    def net(self,iv_net,highlight=set(),**kwds):
+    def net(self,f_net,highlight=set(),**kwds):
         "Draw the net interval corresponding to alpha"
-        for net_iv in iv_net.net:
+        for net_iv in f_net.net:
             self.cr.interval(net_iv,label=self.gn.nb_set_type(net_iv),no_line=True,label_endpoints=True)
         self.cr.stroke()
         for iv in highlight:
@@ -60,10 +60,10 @@ class Visual:
             self.cr.set_colour('black')
 
     @draw
-    def interval(self,iv_net,**kwds):
+    def interval(self,f_net,**kwds):
         "Draw the intervals of generation alpha"
         levels = [[]]
-        for iv in iv_net.iv:
+        for iv in f_net.intervals():
             done = False
             for level in levels:
                 if level == [] or level[-1].b <= iv.a:
@@ -81,8 +81,8 @@ class Visual:
     @draw
     def nb_set(self):
         "Print the neighbour set types, and the associated index"
-        for nb,idx in self.gn.nb_set_types.items():
-            self.cr.show_text("{} : {}".format(idx,nb))
+        for nb_set in self.gn.nb_mgr:
+            self.cr.show_text("{} : {}".format(self.gn.nb_mgr.nb_set_type(nb_set),nb_set))
             self.cr.newline()
             self.cr.move_to(0,0)
 
@@ -163,6 +163,7 @@ class CrContext(cairo.Context):
         self.translate(0,dist/self.cur_scale)
 
     def show_text_centred(self,text):
+        text = str(text)
         ext = self.text_extents(text)
         x,y =  self.get_current_point()
         new_x = x-ext.width/2

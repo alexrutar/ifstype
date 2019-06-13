@@ -1,41 +1,57 @@
-from sympy import Rational, log, Max
+from sympy import Rational, log, Max, sqrt
 import itertools
 from collections import defaultdict
 
-from .ifs import IFS,Interval,CtrFunc
+from .interval import NetInterval,Interval
+from .ifs import IFS,CtrFunc,C
 from .gens import Generations
 from .draw import Visual
 from .select import *
 
+def ifs0():
+    # doesn't work yet
+    r = (sqrt(5)-1)/2
+    return Generations(IFS(
+        (CtrFunc(r,Rational(0)),Rational(1,2)),
+        (CtrFunc(r,Rational(1)-r),Rational(1,2))),
+        finite_type=True)
 def ifs1():
+    # finite type III
     return Generations(IFS(
         (CtrFunc(Rational(1,2),0), Rational(1,3)),
         (CtrFunc(Rational(1,4),Rational(1,4)), Rational(1,3)),
-        (CtrFunc(Rational(1,2),Rational(1,2)), Rational(1,3))))
+        (CtrFunc(Rational(1,2),Rational(1,2)), Rational(1,3))),
+        finite_type=True)
 
 def ifs2():
+    # finite type IV
     return Generations(IFS(
         (CtrFunc(Rational(1,3),0), Rational(1,4)),
         (CtrFunc(Rational(1,5),Rational(4,15)), Rational(1,4)),
         (CtrFunc(Rational(1,3),Rational(7,15)), Rational(1,4)),
         (CtrFunc(Rational(1,5),Rational(4,5)), Rational(1,4))),
-        nb_set_types={
-            (Interval(0,1),): '0',
-            (Interval(-4,1), Interval(0,3)): '1',
-            (Interval(-Rational(1,2),1),): '2',
-            (Interval(0,Rational(5,4)),): '3',
-            (Interval(0,1), Interval(0,3)): '4'})
+        finite_type=True)
 
 def ifs3():
+    # not finite type
     return Generations(IFS(
-        (CtrFunc(Rational(1,2),0), Rational(1,4)),
-        (CtrFunc(Rational(1,4),Rational(1,4)), Rational(1,4)),
-        (CtrFunc(Rational(1,4),Rational(1,2)), Rational(1,4)),
-        (CtrFunc(Rational(1,2),Rational(1,2)), Rational(1,4))))
+        (CtrFunc(Rational(1,3),0), Rational(1,4)),
+        (CtrFunc(Rational(1,4),Rational(4,15)), Rational(1,4)),
+        (CtrFunc(Rational(1,3),Rational(7,15)), Rational(1,4)),
+        (CtrFunc(Rational(1,5),Rational(4,5)), Rational(1,4))),
+        finite_type=False)
 
+def ifs4():
+    # finite type IV
+    return Generations(IFS(
+        (CtrFunc(Rational(1,3),0),Rational(1,4)),
+        (CtrFunc(Rational(1,4),Rational(1,4)),Rational(1,4)),
+        (CtrFunc(Rational(1,3),Rational(1,2)),Rational(1,4)),
+        (CtrFunc(Rational(1,4),Rational(3,4)),Rational(1,4))),
+        finite_type=True)
 
 def test_uq_subdiv():
-    gn = ifs3()
+    gn = ifs2()
     diagram = Visual(gn,"example.pdf",1,scale=2)
     for alpha in [Rational(1,2),Rational(1,4),Rational(1,8),Rational(1,16)]:
         iv_net = gn.gen(alpha)
@@ -48,12 +64,15 @@ def example_draw():
     "An example drawing illustrating the interval and net methods"
     gn = ifs2()
     diagram = Visual(gn,"example.pdf",1,scale=3)
-    for alpha in [Rational(1),Rational(1,3),Rational(1,5),Rational(1,9),Rational(1,15),Rational(1,25)]:
+    for alpha in [C.n_base,Rational(1),Rational(1,3),Rational(1,5),Rational(1,9),Rational(1,15)]:
         iv_net = gn.gen(alpha)
         diagram.interval(iv_net)
         diagram.net(iv_net)
+
     diagram.nb_set()
     diagram.show()
+    #  iv = NetInterval(Rational(1,3),Rational(1,3),Rational(7,15))
+    #  print(f"Transition Type of interval {iv} : {gn.ttype(iv)}")
 
 
 def global_min_delta(alphas=map(lambda n: Rational(1,5)**n,range(4))):
@@ -90,11 +109,11 @@ def test_neighbour_size(alphas=map(lambda n: Rational(1,3)**n,range(30))):
     cur_max = 0
     for (mid,iv_net) in gn.gen_from_select(alphas,random):
         left,right = iv_net.adjacent(mid)
-        if left.is_empty:
+        if left.is_empty():
             ld = 0
         else:
             ld = abs(log(left.delta/mid.delta))
-        if right.is_empty:
+        if right.is_empty():
             rd = 0
         else:
             rd = abs(log(right.delta/mid.delta))

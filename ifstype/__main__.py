@@ -1,12 +1,12 @@
 import logging
 from .algorithms import *
+from .interval import *
 
 def main():
     logging.basicConfig(filename='example.log',level=logging.DEBUG)
-    #  transition_types(alphas=[Rational(1,3),Rational(1,9),Rational(1,27)])
-    #  transition_types()
-    #  test_uq_subdiv()
+
     example_draw()
+    #  test_gens()
     #  normalized_deltas()
 
 

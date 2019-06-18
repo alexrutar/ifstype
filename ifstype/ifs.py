@@ -1,15 +1,15 @@
 from sympy import Rational
 import operator
-import functools
+from functools import reduce
 import itertools
 import typing
-from sortedcontainers import SortedList
-from functools import reduce
+from sortedcontainers import SortedSet,SortedList
 
+from .numeric import Constants as C
 from .interval import Interval
 
 def app(word,target):
-    return functools.reduce(operator.mul, [target[i] for i in word],1)
+    return reduce(operator.mul, [target[i] for i in word],1)
 
 class Word:
     def __init__(self, ab, rm, p, f):
@@ -40,7 +40,7 @@ class Word:
 
     @classmethod
     def empty(cls):
-        return cls("",None,Rational(1),CtrFunc.id())
+        return cls("",None,C.n_1,CtrFunc.id())
 
     def extend(self, a, ct_f, pnew):
         new_f = self.f.compose(ct_f)
@@ -84,12 +84,12 @@ class CtrFunc(typing.NamedTuple):
 
     @classmethod
     def id(cls):
-        return cls(Rational(1),Rational(0))
+        return cls(C.n_1,C.n_0)
 
     def compose(self, ct_f):
         return CtrFunc(self.r*ct_f.r, self.a+self.r*ct_f.a)
 
-    def interval(self,iv=Interval(0,1)):
+    def interval(self,iv=Interval(C.n_0,C.n_1)):
         left = self(iv.a)
         right = self(iv.b)
         if left <= right:
@@ -104,34 +104,11 @@ class CtrFunc(typing.NamedTuple):
     def __str__(self):
         return "f:x*{}+{}".format(self.r,self.a)
 
-# define a class containing constants
-def constant(f):
-    def fset(self, value):
-        raise AttributeError("Cannot change constant values")
-    def fget(self):
-        return f()
-    return property(fget, fset)
-
-class _Const:
-    @constant
-    def n_base():
-        return Rational(2)
-    @constant
-    def n_0():
-        return Rational(0)
-    @constant
-    def n_1():
-        return Rational(1)
-    @constant
-    def iv_0_1():
-        return Interval(Rational(0),Rational(1))
-
-C = _Const()
 
 class IFS:
     # an IFS is essentially a factory for words and ctr funcs
     def __init__(self, *funcs):
-        "funcs is a pair (ct_f,pr)"
+        """funcs is a (CtrFunc, p) pair where 0<p<1"""
         funcs = sorted(funcs,key=lambda x:x[0].a)
 
         self.f = [f[0] for f in funcs]
@@ -144,13 +121,24 @@ class IFS:
         self.rmin = min(abs(r) for r in self.r)
         self.rmax = max(abs(r) for r in self.r)
 
-    def transition_gens(self,start=1):
-        abs_r = sorted(set(abs(r)) for r in self.r)
-        jumps = map(lambda n:self.rmax**n,itertools.count(0))
-        sorted_r=SortedSet([])
-        for n,j in enumerate(jumps):
-            sorted_r.update(reduce(operator.mul,itertools.product(abs_r,repeat=n),1))
-            cur = sorted_r.pop()
+    def transition_gens(self,stop=0):
+        """
+        Compute the numbers which look like a product of |r_i| that are >= stop in increasing order.
+        Defaults to an infinite generator.
+        TODO: implement start point? (products that are >= start)
+        """
+        abs_r = set(abs(r) for r in self.r)
+        sorted_r=SortedSet([C.n_base])
+        for n,j in ((i,self.rmax**i) for i in itertools.count(0)):
+            sorted_r.update(x for x in (reduce(operator.mul,tup,1) for tup in itertools.product(abs_r,repeat=n)) if x>=stop)
+            while True:
+                try:
+                    cur = sorted_r.pop()
+                except IndexError:
+                    return
+                yield cur
+                if cur == j:
+                    break
 
 
     def __str__(self):

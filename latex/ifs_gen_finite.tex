@@ -411,7 +411,7 @@ We set
 \end{equation*}
 Elements of $\mathcal{F}_\alpha$ are called \mbf{net intervals of generation $\alpha$}.
 \begin{definition}
-    A pair $(a,L)$ is a \textbf{neighbour} of $\Delta=[a_0,b_0]\in\mathcal{F}_n$ if there is some $\sigma\in\Lambda_\alpha$ such that $S_\sigma(0,1)\cap\Delta\neq\emptyset$, $\lambda(\Delta)^{-1}r_\sigma=L$, and $\lambda(\Delta)^{-1}(a_0-S_\sigma(0))=a$, and we say that $\sigma$ \textbf{generates} the neighbour $(a,L)$.
+    A pair $(a,L)$ is a \textbf{neighbour} of $\Delta=[a_0,b_0]\in\mathcal{F}_\alpha$ if there is some $\sigma\in\Lambda_\alpha$ such that $S_\sigma(0,1)\cap\Delta\neq\emptyset$, $\lambda(\Delta)^{-1}r_\sigma=L$, and $\lambda(\Delta)^{-1}(a_0-S_\sigma(0))=a$, and we say that $\sigma$ \textbf{generates} the neighbour $(a,L)$.
     Then the \textbf{neighbour set} of $\Delta$ is the ordered tuple
     \begin{equation*}
         V_\alpha(\Delta)=((a_1,L_1),\ldots,(a_j,L_j))
@@ -448,7 +448,7 @@ As in the proof of \cref{p:gfin}, we see that either $n>1$ or if $n=1$, then $V_
 We call the tuple $(\Delta_1,\ldots,\Delta_n)$ the \textbf{children} of $\Delta\in\mathcal{F}_\alpha$.
 Note that it suffices to take any $\gamma'$ such that
 \begin{equation*}
-    \min\bigl\{r_{\max}\gamma,\lambda(\Delta)\cdot\max\{|L_i|:i=1,\ldots,n; |L_i|\neq L_{\max}\}\bigr\}<\gamma'\leq\gamma
+    \max\bigl\{r_{\max}\gamma,\lambda(\Delta)\cdot\max\{|L_i|:i=1,\ldots,n; |L_i|\neq L_{\max}\}\bigr\}<\gamma'\leq\gamma
 \end{equation*}
 where the inner maximum is taken to be 0 if the set is empty.
 \begin{definition}
@@ -601,23 +601,12 @@ It is straightforward to see that transition matrices are well-defined, since if
     \end{enumerate}
 \end{proposition}
 \section{Misc ideas}
-\begin{proposition}
-    Let $0<\alpha\leq 1$ and $\Delta\in\mathcal{F}_\alpha$ arbitrary.
-    Let $r=|r_i|$ for some $i$, so that $\Delta$ has children $(\Delta_1,\ldots,\Delta_n)$ ordered left to right in $\mathcal{F}_{r\alpha}$.
-    Then the sequence $(\mu(\Delta_i),V_{r\alpha}(\Delta_i))_{i=1}^n$ depends only on $\alpha$, $\lambda(\Delta)$ and $V_\alpha(\Delta)$.
-\end{proposition}
-\begin{remark}
-    One might hope to drop the requirement on knowing $\alpha$; however, this does not hold if so.
-    However, this is may be sufficient to prove that there are only finitely many types:
-\end{remark}
-
-How hard to characterize transition maps $\Lambda_\alpha\to\Lambda_{r_i\alpha}$?
-If there are only finitely many such transitions, we have finiteness requirement.
-
-May need to do some sort of local argument?
-Fix a value of $x$, and consider a monotonic sequence $(\alpha_i)_{i=1}^\infty$ with $0<\alpha_i<1$ and $(\alpha_i)\to 0$.
-Then look at the sequence of character.
-
-How hard to prove that something is actually finite type?
+Define characteristic vector, so that the transition matrix is uniquely defined?
+To compute transition matrix, we need
+\begin{itemize}
+    \item the neighbour type of the parent
+    \item the neighbour type of the child
+    \item the index of the child (there can be multiple children of the same neighbour type)
+\end{itemize}
 \end{document}
 

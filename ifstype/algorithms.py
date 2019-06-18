@@ -3,52 +3,49 @@ import itertools
 from collections import defaultdict
 
 from .interval import NetInterval,Interval
-from .ifs import IFS,CtrFunc,C
-from .gens import Generations
+from .ifs import IFS,CtrFunc
+from .numeric import Constants as C
+from .generations import FiniteType, InfiniteType
 from .draw import Visual
 from .select import *
 
 def ifs0():
     # doesn't work yet
     r = (sqrt(5)-1)/2
-    return Generations(IFS(
+    return FiniteType(IFS(
         (CtrFunc(r,Rational(0)),Rational(1,2)),
-        (CtrFunc(r,Rational(1)-r),Rational(1,2))),
-        finite_type=True)
+        (CtrFunc(r,Rational(1)-r),Rational(1,2))))
+
 def ifs1():
     # finite type III
-    return Generations(IFS(
+    return FiniteType(IFS(
         (CtrFunc(Rational(1,2),0), Rational(1,3)),
         (CtrFunc(Rational(1,4),Rational(1,4)), Rational(1,3)),
-        (CtrFunc(Rational(1,2),Rational(1,2)), Rational(1,3))),
-        finite_type=True)
+        (CtrFunc(Rational(1,2),Rational(1,2)), Rational(1,3))))
 
 def ifs2():
     # finite type IV
-    return Generations(IFS(
+    return FiniteType(IFS(
         (CtrFunc(Rational(1,3),0), Rational(1,4)),
         (CtrFunc(Rational(1,5),Rational(4,15)), Rational(1,4)),
         (CtrFunc(Rational(1,3),Rational(7,15)), Rational(1,4)),
-        (CtrFunc(Rational(1,5),Rational(4,5)), Rational(1,4))),
-        finite_type=True)
+        (CtrFunc(Rational(1,5),Rational(4,5)), Rational(1,4))))
 
 def ifs3():
     # not finite type
-    return Generations(IFS(
+    return InfiniteType(IFS(
         (CtrFunc(Rational(1,3),0), Rational(1,4)),
         (CtrFunc(Rational(1,4),Rational(4,15)), Rational(1,4)),
         (CtrFunc(Rational(1,3),Rational(7,15)), Rational(1,4)),
-        (CtrFunc(Rational(1,5),Rational(4,5)), Rational(1,4))),
-        finite_type=False)
+        (CtrFunc(Rational(1,5),Rational(4,5)), Rational(1,4))))
 
 def ifs4():
     # finite type IV
-    return Generations(IFS(
+    return FiniteType(IFS(
         (CtrFunc(Rational(1,3),0),Rational(1,4)),
         (CtrFunc(Rational(1,4),Rational(1,4)),Rational(1,4)),
         (CtrFunc(Rational(1,3),Rational(1,2)),Rational(1,4)),
-        (CtrFunc(Rational(1,4),Rational(3,4)),Rational(1,4))),
-        finite_type=True)
+        (CtrFunc(Rational(1,4),Rational(3,4)),Rational(1,4))))
 
 def test_uq_subdiv():
     gn = ifs2()
@@ -60,11 +57,20 @@ def test_uq_subdiv():
     diagram.nb_set()
     diagram.show()
 
+def test_gens():
+    ifs = IFS(
+            (CtrFunc(Rational(1,2),0),Rational(1,4)),
+            (CtrFunc(Rational(1,3),Rational(1,4)),Rational(1,4)),
+            (CtrFunc(Rational(1,4),Rational(3,4)),Rational(1,4)),
+            (CtrFunc(Rational(1,5),Rational(4,5)), Rational(1,4)))
+    for n in ifs.transition_gens(stop=Rational(1,127)):
+        print(n)
+
 def example_draw():
     "An example drawing illustrating the interval and net methods"
-    gn = ifs2()
+    gn = ifs4()
     diagram = Visual(gn,"example.pdf",1,scale=3)
-    for alpha in [C.n_base,Rational(1),Rational(1,3),Rational(1,5),Rational(1,9),Rational(1,15)]:
+    for alpha in gn.ifs.transition_gens(stop=gn.new_transition_stop):
         iv_net = gn.gen(alpha)
         diagram.interval(iv_net)
         diagram.net(iv_net)
@@ -109,11 +115,11 @@ def test_neighbour_size(alphas=map(lambda n: Rational(1,3)**n,range(30))):
     cur_max = 0
     for (mid,iv_net) in gn.gen_from_select(alphas,random):
         left,right = iv_net.adjacent(mid)
-        if left.is_empty():
+        if left.is_empty:
             ld = 0
         else:
             ld = abs(log(left.delta/mid.delta))
-        if right.is_empty():
+        if right.is_empty:
             rd = 0
         else:
             rd = abs(log(right.delta/mid.delta))

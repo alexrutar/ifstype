@@ -2,8 +2,7 @@ import typing
 from sortedcontainers import SortedSet
 from sympy import Rational
 
-from .interval import NetInterval
-from .ifs import C
+from .numeric import Constants as C
 
 class Neighbour(typing.NamedTuple):
     "A Neighbour object, with operations defined with respect to a net_iv"
@@ -12,13 +11,13 @@ class Neighbour(typing.NamedTuple):
 
     @classmethod
     def from_f(cls,f,net_iv):
-        delta = net_iv.delta()
+        delta = net_iv.delta
         return cls(
                 (net_iv.a-f(C.n_0))/delta,
                 f.r/delta)
 
     def to_f(self,net_iv):
-        delta = net_iv.delta()
+        delta = net_iv.delta
         return CtrFunc(self.L*delta,delta*self.a+net_iv.a)
 
 class NeighbourSet(tuple):
@@ -69,17 +68,6 @@ class FiniteNbMgr:
             self.nb_set_types = SortedSet([])
         else:
             self.nb_set_types = SortedSet(existing_nb_sets)
-
-    def create_nb_set(self,gn):
-        to_update = [NetInterval(C.n_1,C.n_0,C.n_1)]
-        while(len(to_update)>0):
-            new = []
-            for net_iv in to_update:
-                new_nb = gn.nb_set(net_iv)
-                if new_nb not in self.nb_set_types:
-                    self.nb_set_types.add(new_nb)
-                    new.extend(gn.im_children(net_iv))
-            to_update = new
 
     def __iter__(self):
         return iter(self.nb_set_types)

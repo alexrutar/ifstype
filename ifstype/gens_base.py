@@ -5,7 +5,7 @@ from sympy import Matrix, Rational
 from collections import defaultdict
 from sortedcontainers import SortedList,SortedDict,SortedSet
 
-from .interval import Interval, NetInterval
+from .interval import Interval, NetInterval, View
 from .ifs import Word
 from .neighbour import NeighbourSet, Neighbour, InfiniteNbMgr, FiniteNbMgr
 from .numeric import Constants as C
@@ -20,10 +20,10 @@ class Gen:
     """
     def __init__(self,genkey,words,forgetful=False):
         self.alpha = genkey.alpha
-        self.view = genkey.interval
+        self.view = genkey.view
 
         # warning: open intersection is not sufficient, since contributions to endpoints is also important!
-        self._words = set(w for w in words if not (w.interval() & self.view).is_empty) # only keep words which intersect with interval
+        self._words = set(w for w in words if not (View(w.interval()) & self.view).is_empty) # only keep words which intersect with the view
 
         # creates a list of functions and a dictionary showing which words generate a given function
         if not forgetful:
@@ -47,7 +47,7 @@ class Gen:
     def nb_set(self,net_iv):
         "Return the local neighbour set of a net_iv"
         if net_iv not in self.net:
-            raise ValueError(f"{net_iv} is not a net interval of generation {self.alpha} with view {self.interval}")
+            raise ValueError(f"{net_iv} is not a net interval of generation {self.alpha} with view {self.view}")
         return NeighbourSet(Neighbour.from_f(f,net_iv) for f in self.fs() if not (f.interval().interior() & net_iv).is_empty)
 
     def intervals(self):
@@ -78,7 +78,7 @@ class Gen:
         try:
             return self.f_dict[f]
         except KeyError:
-            raise ValueError(f"{f} is not a function of generation {self.alpha} with view {self.interval}")
+            raise ValueError(f"{f} is not a function of generation {self.alpha} with view {self.view}")
 
 
     def argmin_delta(self):
@@ -94,104 +94,109 @@ class GenKey(typing.NamedTuple):
     """A key used in Generations._gen to compare previous computations, equipped with a comparison relation (not a total ordering!).
     """
     alpha: Rational
-    interval: Interval
+    view: View
 
     def __str__(self):
-        return str((self.alpha,self.interval))
+        return str((self.alpha,self.view))
 
     def __hash__(self):
-        return hash((self.alpha,self.interval))
+        return hash((self.alpha,self.view))
 
     def __ge__(self,other):
-        return self.alpha >= other.alpha and self.interval.supset(other.interval)
+        return self.alpha >= other.alpha and self.view.supset(other.view)
     def __le__(self,other):
-        return self.alpha <= other.alpha and self.interval.subset(other.interval)
+        return self.alpha <= other.alpha and self.view.subset(other.view)
 
     def __gt__(self,other):
-        return (self.alpha >= other.alpha and self.interval.proper_supset(other.interval)) or \
-                (self.alpha > other.alpha and self.interval.supset(other.interval))
+        return (self.alpha >= other.alpha and self.view.proper_supset(other.view)) or \
+                (self.alpha > other.alpha and self.view.supset(other.view))
     def __lt__(self,other):
-        return (self.alpha <= other.alpha and self.interval.proper_subset(other.interval)) or \
-                (self.alpha < other.alpha and self.interval.subset(other.interval))
+        return (self.alpha <= other.alpha and self.view.proper_subset(other.view)) or \
+                (self.alpha < other.alpha and self.view.subset(other.view))
     def __eq__(self,other):
-        return self.alpha == other.alpha and self.interval == other.interval
+        return self.alpha == other.alpha and self.view == other.view
     def __neq__(self,other):
-        return self.alpha != other.alpha or self.interval != other.interval
+        return self.alpha != other.alpha or self.view != other.view
 
 
-class Base_Generations:
+class BaseGenerations:
     """
     The keyword arguments are used to provide known facts about the IFS, which can simplify or speed up the computations.
     - finite_type : whether or not the IFS is `finite type`
     - existing_nb_sets : a pre-computed list of neighbour sets, to be used with finite_type=True, to avoid recomputing the neighbour sets
     - full_K : the invariant compact set is the total interval [0,1]
     """
-    def __init__(self, ifs, finite_type=False, existing_nb_sets=None):
+    def __init__(self, ifs):
         self.ifs = ifs
-        # set default generation
-        gk = GenKey(C.n_base,Interval(C.n_0,C.n_1))
+        gk = GenKey(C.n_base,View(Interval(C.n_0,C.n_1)))
         self._gens = {gk : Gen(gk, [Word.empty()])}
 
-        # either finite type or infinite type
-        if finite_type:
-            self.nb_mgr = FiniteNbMgr(existing_nb_sets)
-            # initialize the neighbour set
-            to_update = [NetInterval(C.n_0,C.n_1,C.n_base)]
-            gft = C.n_base
-            while(len(to_update)>0):
-                new = []
-                for net_iv in to_update:
-                    new_nb = self.nb_set(net_iv)
-                    if new_nb not in self.nb_mgr:
-                        self.nb_mgr.add(new_nb)
-                        ch = self.im_children(net_iv)
-                        gft = min(gft, ch.alpha)
-                        new.extend(ch)
-                to_update = new
 
-            self.new_transition_stop = gft
-        else:
-            self.nb_mgr = InfiniteNbMgr(existing_nb_sets)
-            self.new_transition_stop = 0
+
+    def im_alpha(self, net_iv):
+        """Compute a generation alpha containing the immediate children of `net_iv`.
+
+        :param net_iv: A valid NetInterval of any generation.
+        :return: A Gen object.
+
+        """
+        return max(abs(nb.L) for nb in self.nb_set(net_iv))*net_iv.delta
 
     def im_children(self, net_iv):
-        "Compute the immediate children of net_iv"
-        gamma = max(abs(nb.L) for nb in self.nb_set(net_iv))*net_iv.delta
-        return self.children(gamma, net_iv)
+        """Compute the immediate children of `net_iv`.
+
+        :param net_iv: A valid NetInterval of any generation.
+        :return: A Gen object.
+
+        """
+        return self.children(self.im_alpha(net_iv), net_iv)
 
     def ttype(self, net_iv):
+        """Compute the transition type of `net_iv`.
+
+        :param net_iv: A valid NetInterval of any generation.
+        :return: A transition type tuple.
+
+        """
         ch_gen = self.im_children(net_iv)
         return tuple(((ch.a - net_iv.a)/net_iv.delta, ch.delta/net_iv.delta, self.nb_set(ch)) for ch in ch_gen)
 
     def children(self, alpha, net_iv):
-        "Compute the children (in generation alpha) of an interval as a restricted interval net"
-        out = self.gen(alpha, interval=Interval(net_iv.a,net_iv.b))
-        return out
+        """Compute the children in generation `alpha` of `net_iv`.
 
-    def nb_set(self, net_iv):
-        "Compute the neighbour set of a net_iv, wrapper for Gen.nb_set"
-        return self.gen(net_iv.alpha, interval=Interval(net_iv.a,net_iv.b)).nb_set(net_iv) # only need the restricted view at net_iv
+        :param alpha: A rational with `0 < alpha <= net_iv.alpha`.
+        :param net_iv: A valid NetInterval of any generation.
+        :return: A Gen object with `Gen.alpha=alpha` and `Gen.view=net_iv`.
+
+        """
+        return self.gen(alpha, view=View(net_iv))
 
     # neighbour set functions
-    def all_nb_sets(self):
-        return str(self.nb_mgr)
+    def nb_set(self, net_iv):
+        """Compute the neighbour set of `net_iv`.
+        
+        :param net_iv: A valid NetInterval of any generation.
+        :return: A NeighbourSet object.
+
+        """
+        return self.gen(net_iv.alpha, view=View(net_iv)).nb_set(net_iv) # only need the restricted view at net_iv
 
     def nb_set_type(self, net_iv):
-        "Look up the associated string with the nb_set_type"
+        "Return a unique integer (indexed from 0) corresponding to the neighbour set (for human readibility)."
         return self.nb_mgr.nb_set_type(self.nb_set(net_iv))
 
     # main construction methods
-    def gen(self, alpha,interval=None):
+    def gen(self, alpha,view=None):
         """Compute the Gen object of generation alpha corresponding to the specified interval, and caches the result in self._gens
         We use as a starting point the set of all words of generation beta where beta >= alpha is minimal, over an interval containing interval
         """
         # compute the starting point, which is the smallest interval of generation beta > alpha
-        if interval is None:
-            interval = Interval(0,1)
+        if view is None:
+            view = View(Interval(0,1))
 
-        genkey = GenKey(alpha,interval)
+        genkey = GenKey(alpha,view)
         prev = min((k for k in self._gens.keys() if k >= genkey),
-                key=lambda k:(k.alpha,k.interval.delta))
+                key=lambda k:(k.alpha,k.view.delta))
 
         if prev == genkey:
             # key already exists
@@ -212,29 +217,34 @@ class Base_Generations:
         self._gens[genkey] = new_gen
         return new_gen
 
-    def gen_from_select(self, alphas, select):
+    def gen_from_select(self, select, stop=None):
         """
+        Yield a sequence of pairs (NetIv,Gen) with NetIv in Gen
         Compute an interval selection for each value of alpha.
         Given a list of alphas and starting with Interval(0,1), choose a child of the current net interval in the next generation
         alpha, and repeat.
 
-        arguments:
-        - alphas: an iterable of Sympy rational values
-        - select: any function f:Gen -> NetInterval where NetInterval is in Gen
+        :param select: any function f:Gen -> NetInterval where NetInterval is in Gen
 
         returns:
         - a generator which yields pairs (NetInterval, Gen) from generations in alphas
         """
         left = Interval.empty()
-        middle = Interval(0,1)
+        middle = C.net_iv_base
         right = Interval.empty()
         gen = self.gen(1)
-        for alpha in alphas:
+        if stop is None:
+            itbl = iter(int, 1) # infinite iterable
+        else:
+            itbl = range(stop)
+        for _ in itbl:
+            alpha = self.im_alpha(middle)
             # this choice guarantees that we have the left and right intervals in the children
-            tmp_gen = self.children(alpha, Interval(left.a,right.b))
-            middle = select(self.children(alpha, middle))
+            tmp_gen = self.gen(alpha,view=View(left,middle,right))
+
+            middle = select(self.gen(alpha,view=View(middle)))
             left,right = tmp_gen.adjacent(middle)
-            gen = self.gen(alpha, interval=left|middle|right)
+            gen = self.gen(alpha, view=View(left,middle,right))
             yield (middle,gen)
 
 

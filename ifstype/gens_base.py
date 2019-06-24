@@ -1,16 +1,19 @@
 import itertools
 import typing
 import operator
-from sympy import Matrix, Rational
+from sympy import Matrix
 from collections import defaultdict
 from sortedcontainers import SortedList,SortedDict,SortedSet
 
-from .interval import Interval, NetInterval, View
+from .interval import Interval, NetInterval, View, IntervalSet
 from .ifs import Word
 from .neighbour import NeighbourSet, Neighbour, InfiniteNbMgr, FiniteNbMgr
-from .numeric import Constants as C
+from .numeric import Constants as C, Rational
 
 
+# TODO: Write a class GeometricGen, which is essentially the same as Gen, but it doesn't save the words at all
+# subsequent generations can be computed directly based on the IFS dynamics (if it is finite type)
+# use this for FiniteType computations, where you can generate the transition maps using the standard object then go to the faster version after computing everything in advance.
 class Gen:
     """A Gen is essentially a forgetful generation with masking.
     One can determine the complete behaviour of the children when you know what the functions associated to the words are.
@@ -18,12 +21,20 @@ class Gen:
     If forgetful is set to true, only one word per function is saved.
     TODO: allow passing forgetful at generations level.
     """
-    def __init__(self,genkey,words,forgetful=False):
+    def __init__(self,genkey,words,forgetful=False,full_K=False):
         self.alpha = genkey.alpha
-        self.view = genkey.view
+        # computing the iteration is pretty heavy, there's probably a faster way to do it
+        # maybe maintain a representative set? especially in the finite type case, if loading from saved transition maps
 
-        # warning: open intersection is not sufficient, since contributions to endpoints is also important!
-        self._words = set(w for w in words if not (View(w.interval()) & self.view).is_empty) # only keep words which intersect with the view
+        # warning: open intersection is not sufficient, since contributions to endpoints is also important! TODO why?
+        self._words = set(w for w in words if not (View(w.interval()) & genkey.view).is_empty) # only keep words which intersect with the view
+
+        if full_K:
+            self.view = genkey.view
+            self.iteration=Interval.closed(0,1)
+        else:
+            self.iteration = IntervalSet(w.interval() for w in self._words) # the generation n net
+            self.view = genkey.view & self.iteration
 
         # creates a list of functions and a dictionary showing which words generate a given function
         if not forgetful:
@@ -36,8 +47,10 @@ class Gen:
 
         endpoints = SortedSet(ep for ep in itertools.chain.from_iterable((f(C.n_0),f(C.n_1)) for f in self.fs()) if ep in self.view)
 
-        self.net = tuple(NetInterval(a,b,self.alpha) for a,b in zip(endpoints,endpoints[1:]))
+        self.net = tuple(NetInterval(a,b,self.alpha) for a,b in zip(endpoints,endpoints[1:]) if self.iteration.contains_interval(Interval.open(a,b)))
 
+    def __str__(self):
+        return ", ".join(str(n) for n in self.net)
     def words(self):
         return iter(self._words)
 
@@ -126,12 +139,14 @@ class BaseGenerations:
     - existing_nb_sets : a pre-computed list of neighbour sets, to be used with finite_type=True, to avoid recomputing the neighbour sets
     - full_K : the invariant compact set is the total interval [0,1]
     """
-    def __init__(self, ifs):
+    def __init__(self, ifs, nb_mgr=None):
         self.ifs = ifs
         gk = GenKey(C.n_base,View(Interval(C.n_0,C.n_1)))
         self._gens = {gk : Gen(gk, [Word.empty()])}
-
-
+        if nb_mgr is None:
+            raise ValueError("Must provide a nb_mgr!")
+        else:
+            self.nb_mgr = nb_mgr
 
     def im_alpha(self, net_iv):
         """Compute a generation alpha containing the immediate children of `net_iv`.
@@ -149,7 +164,14 @@ class BaseGenerations:
         :return: A Gen object.
 
         """
-        return self.children(self.im_alpha(net_iv), net_iv)
+        return self.gen(self.im_alpha(net_iv), view=View(net_iv))
+
+    def parent(self, alpha, net_iv):
+        "Compute the parent (in generation alpha) of an interval"
+        for par in self.gen(alpha).net:
+            if net_iv.subset(par):
+                return par
+        return None
 
     def ttype(self, net_iv):
         """Compute the transition type of `net_iv`.
@@ -160,16 +182,6 @@ class BaseGenerations:
         """
         ch_gen = self.im_children(net_iv)
         return tuple(((ch.a - net_iv.a)/net_iv.delta, ch.delta/net_iv.delta, self.nb_set(ch)) for ch in ch_gen)
-
-    def children(self, alpha, net_iv):
-        """Compute the children in generation `alpha` of `net_iv`.
-
-        :param alpha: A rational with `0 < alpha <= net_iv.alpha`.
-        :param net_iv: A valid NetInterval of any generation.
-        :return: A Gen object with `Gen.alpha=alpha` and `Gen.view=net_iv`.
-
-        """
-        return self.gen(alpha, view=View(net_iv))
 
     # neighbour set functions
     def nb_set(self, net_iv):
@@ -190,11 +202,11 @@ class BaseGenerations:
         """Compute the Gen object of generation alpha corresponding to the specified interval, and caches the result in self._gens
         We use as a starting point the set of all words of generation beta where beta >= alpha is minimal, over an interval containing interval
         """
-        # compute the starting point, which is the smallest interval of generation beta > alpha
         if view is None:
             view = View(Interval(0,1))
 
         genkey = GenKey(alpha,view)
+        # compute the starting point, which is the smallest interval of generation beta > alpha
         prev = min((k for k in self._gens.keys() if k >= genkey),
                 key=lambda k:(k.alpha,k.view.delta))
 
@@ -204,22 +216,19 @@ class BaseGenerations:
         elif prev.alpha == genkey.alpha:
             # alpha already exists: just need to restrict existing gen
             # TODO: implement this faster as an internal restriction method, i.e. create as function from previous gen
-            # use self.__class__() to initialize new instance
             new_gen = Gen(genkey, self._gens[prev].words())
         else:
             # alpha doesn't exist, extend from words of next best (first by closest alpha, then by smallest size interval containing it)
             # TODO: after faster restriction, restrict containing interval first, then extend
             new_gen = Gen(genkey, itertools.chain.from_iterable(self.extend_to_gen(genkey.alpha,w) for w in self._gens[prev].words()))
 
-        # add new neighbour types to the governing list (in finite case, perhaps update does nothing)
-        self.nb_mgr.update(new_gen.nb_set(net_iv) for net_iv in new_gen)
-
         self._gens[genkey] = new_gen
         return new_gen
 
     def gen_from_select(self, select, stop=None):
         """
-        Yield a sequence of pairs (NetIv,Gen) with NetIv in Gen
+        Yield a sequence of pairs (NetIv,Gen) with NetIv in Gen.
+        If possible, Gen also contains the neighbouring net intervals
         Compute an interval selection for each value of alpha.
         Given a list of alphas and starting with Interval(0,1), choose a child of the current net interval in the next generation
         alpha, and repeat.
@@ -230,7 +239,7 @@ class BaseGenerations:
         - a generator which yields pairs (NetInterval, Gen) from generations in alphas
         """
         left = Interval.empty()
-        middle = C.net_iv_base
+        middle = NetInterval(C.n_0,C.n_1,C.n_base)
         right = Interval.empty()
         gen = self.gen(1)
         if stop is None:
@@ -297,12 +306,4 @@ class BaseGenerations:
                     transition[row][col] += newp
 
         return Matrix(transition)
-
-
-    def parent(self, alpha, net_iv):
-        "Compute the parent (in generation alpha) of an interval"
-        for par in self.gen(alpha).net:
-            if net_iv.subset(par):
-                return par
-        return None
 

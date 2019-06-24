@@ -1,11 +1,10 @@
-from sympy import Rational
 import operator
 from functools import reduce
 import itertools
 import typing
 from sortedcontainers import SortedSet,SortedList
 
-from .numeric import Constants as C
+from .numeric import Rational, Constants as C
 from .interval import Interval
 
 def app(word,target):
@@ -20,9 +19,9 @@ class Word:
         self.f = f
         self.r = f.r
 
-    def interval(self,*args,**kwargs):
-        "Create the interval associated with word"
-        return self.f.interval(*args,**kwargs)
+    def interval(self):
+        "Create the interval associated with word."
+        return self.f.interval()
 
     def copy(self):
         return Word(self.ab, self.rm, self.p, self.f)
@@ -54,11 +53,11 @@ class Word:
 
     # compute / evaluate generations
     def gen(self):
-        return Interval(self.r,self.rm)
+        return Interval.open_closed(self.r, self.rm)
 
     def is_gen(self,alpha):
         "True if word is of generation alpha"
-        return self.r < alpha and self.rm >= alpha
+        return alpha in self.gen()
     def pre_gen(self,alpha):
         "True if word is not yet of generation alpha"
         return self.r >= alpha
@@ -86,16 +85,29 @@ class CtrFunc(typing.NamedTuple):
     def id(cls):
         return cls(C.n_1,C.n_0)
 
+    def fixed_point(self):
+        return self.a/(1-self.r)
+
     def compose(self, ct_f):
         return CtrFunc(self.r*ct_f.r, self.a+self.r*ct_f.a)
 
-    def interval(self,iv=Interval(C.n_0,C.n_1)):
+    def interval(self,iv=Interval.closed(C.n_0,C.n_1)):
         left = self(iv.a)
         right = self(iv.b)
         if left <= right:
-            return Interval(left,right)
+            return Interval(a=left,b=right,has_left=iv.has_left,has_right=iv.has_right)
         else:
-            return Interval(right,left)
+            return Interval(a=right,b=left,has_left=iv.has_right,has_right=iv.has_left)
+    
+    def normalize(self, interval):
+        "Normalize with respect to the given interval."
+        cur_iv = self.interval(iv=interval)
+        new_iv = (cur_iv - interval.a)/interval.delta
+        if self.r > 0:
+            return CtrFunc(new_iv.delta, new_iv.a)
+        else:
+            return CtrFunc(-new_iv.delta, new_iv.b)
+
 
     def __call__(self, x):
         return self.r*x+self.a
@@ -107,19 +119,45 @@ class CtrFunc(typing.NamedTuple):
 
 class IFS:
     # an IFS is essentially a factory for words and ctr funcs
-    def __init__(self, *funcs):
+    def __init__(self, funcs, probabilities):
         """funcs is a (CtrFunc, p) pair where 0<p<1"""
-        funcs = sorted(funcs,key=lambda x:x[0].a)
+        # check params
+        assert all(0<abs(f.r) and abs(f.r)<1 for f in funcs), "IFS contraction factors must have 0<|r|<1"
+        assert all(0<=p and p<1 for p in probabilities) and sum(probabilities) == 1, "IFS probabilities must be non-negative and sum to 1"
 
-        self.f = [f[0] for f in funcs]
-        self.p = [f[1] for f in funcs]
+        sorted_f_pairs = sorted(zip(funcs,probabilities),key=lambda x:x[0].a)
+
+        if any(f.r<0 for f in funcs):
+            print("Warning: convex hull normalization doesn't work with negative factors! Assuming convex hull is [0,1]")
+            self.f = [f[0] for f in sorted_f_pairs]
+        else:
+            cvx_hull = self.convex_hull(funcs)
+            self.f = [f[0].normalize(cvx_hull) for f in sorted_f_pairs]
+
+        self.p = [f[1] for f in sorted_f_pairs]
 
         self.r = [f.r for f in self.f]
         self.a = [f.a for f in self.f]
 
         self.idx = tuple(range(len(funcs)))
-        self.rmin = min(abs(r) for r in self.r)
-        self.rmax = max(abs(r) for r in self.r)
+
+        ab = [abs(r) for r in self.r]
+        self.rmin = min(ab)
+        self.rmax = max(ab)
+
+
+    @staticmethod
+    def convex_hull(funcs):
+        fixed_points = {f.fixed_point() for f in funcs}
+        iterates = set(itertools.chain.from_iterable({f(p) for p in fixed_points} for f in funcs))
+        return Interval.closed(min(iterates), max(iterates))
+
+    @classmethod
+    def uniform_p(cls, *funcs):
+        return cls(funcs,[Rational(1,len(funcs)) for _ in funcs])
+        
+    def __str__(self):
+        return str((self.f,self.p))
 
     def transition_gens(self,stop=0):
         """
@@ -139,10 +177,6 @@ class IFS:
                 yield cur
                 if cur == j:
                     break
-
-
-    def __str__(self):
-        return str((self.f,self.p))
 
     def ct_from_word(self,*ab):
         "Create the contraction function associated to the tuple argument"

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.4.16)  17 JUN 2019 22:27
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=pdflatex 2018.4.16)  19 JUN 2019 21:29
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1525,12 +1525,13 @@ Package hyperref Info: bookmark level for unknown definition defaults to 0 on in
  [1
 
 ]
-Package hyperref Info: bookmark level for unknown remark defaults to 0 on input line 463.
-Package hyperref Info: bookmark level for unknown proposition defaults to 0 on input line 470.
-Package hyperref Info: bookmark level for unknown proof defaults to 0 on input line 479.
+Package hyperref Info: bookmark level for unknown remark defaults to 0 on input line 473.
+Package hyperref Info: bookmark level for unknown proposition defaults to 0 on input line 480.
+ [2]
+Package hyperref Info: bookmark level for unknown proof defaults to 0 on input line 489.
 
-./ifs_gen_finite.tex:487: Undefined control sequence.
-l.487 ...es $(a',L')$, we have $\sigma\precurlyleq
+./ifs_gen_finite.tex:497: Undefined control sequence.
+l.497 ...es $(a',L')$, we have $\sigma\precurlyleq
                                                   \tau$, and since $\sigma\i...
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -1538,38 +1539,39 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-[2]
-Package hyperref Info: bookmark level for unknown example defaults to 0 on input line 525.
-Package hyperref Info: bookmark level for unknown corollary defaults to 0 on input line 547.
- [3]
+Package hyperref Info: bookmark level for unknown example defaults to 0 on input line 536.
+[3]
+Package hyperref Info: bookmark level for unknown corollary defaults to 0 on input line 558.
+Package hyperref Info: bookmark level for unknown lemma defaults to 0 on input line 582.
+ [4] [5]
 \tf@thm=\write6
 \openout6 = `ifs_gen_finite.thm'.
 
- [4]
+ [6]
 \tf@toc=\write7
 \openout7 = `ifs_gen_finite.toc'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 611.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 611.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 691.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 691.
  (./ifs_gen_finite.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 611.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 611.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 691.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 691.
 Package rerunfilecheck Info: File `ifs_gen_finite.out' has not changed.
-(rerunfilecheck)             Checksum: E89696D82E6ABAF1DD804C867CEDB509;263.
+(rerunfilecheck)             Checksum: C21491F00762AF382C2905775C5AC870;345.
  ) 
 Here is how much of TeX's memory you used:
- 36900 strings out of 492649
- 830884 string characters out of 6129622
- 1057630 words of memory out of 5000000
+ 36944 strings out of 492649
+ 831322 string characters out of 6129622
+ 1058630 words of memory out of 5000000
  40020 multiletter control sequences out of 15000+600000
- 89297 words of font info for 276 fonts, out of 8000000 for 9000
+ 90307 words of font info for 298 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  69i,12n,119p,779b,751s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/kpfonts/kpfonts-expert.enc}{/usr/local/texlive/2018/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpbit8a.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpbmi.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpbn8a.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpbsc8a.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpex.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpmi.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpmia.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpmit8a.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpmn8a.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpmnc.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpmne.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpmsc8a.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpsy.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpsya.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpsyb.pfb></usr/local/texlive/2018/texmf-dist/fonts/type1/public/kpfonts/jkpsyc.pfb>
-Output written on ifs_gen_finite.pdf (8 pages, 154246 bytes).
+Output written on ifs_gen_finite.pdf (10 pages, 166704 bytes).
 PDF statistics:
- 178 PDF objects out of 1000 (max. 8388607)
- 150 compressed objects within 2 object streams
- 44 named destinations out of 1000 (max. 500000)
- 50221 words of extra memory for PDF output out of 51595 (max. 10000000)
+ 203 PDF objects out of 1000 (max. 8388607)
+ 173 compressed objects within 2 object streams
+ 56 named destinations out of 1000 (max. 500000)
+ 49205 words of extra memory for PDF output out of 51595 (max. 10000000)
 

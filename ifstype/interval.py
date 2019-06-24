@@ -1,7 +1,8 @@
 import typing
 import operator
 import itertools
-from sympy import Rational, oo
+from sympy import oo
+from .numeric import Rational
 #  from sortedcontainers import SortedList
 from bisect import bisect
 
@@ -48,11 +49,12 @@ def _iv_union(lst,iv):
         del_num += 1
 
     # check if need to include right IV
-    if outside_right_iv is not None and outside_right_iv.cmp_left >= iv.cmp_right:
+    if outside_right_iv is not None and outside_right_iv.cmp_left <= iv.cmp_right:
         right = outside_right_iv.right
         del_num += 1
     elif inside_right_iv is not None and inside_right_iv.cmp_right >= iv.cmp_right:
         right = inside_right_iv.right
+
 
     for _ in range(del_num):
         del lst[del_start]
@@ -92,7 +94,9 @@ def _iv_subset(iv,tup):
 
 
 class IntervalSet(tuple):
-    """An interval class when you also need support for arbitrary unions and complements."""
+    """An interval class when you also need support for arbitrary unions and complements.
+    iv_gen is an interval generator to intialize, where IntervalSet is computed as the union of the intervals in the generator.
+    """
     def __new__(cls, iv_gen=None):
         base = []
         if iv_gen is not None:
@@ -123,6 +127,8 @@ class IntervalSet(tuple):
         return (idx >= 1 and item in self[idx-1]) or (idx < len(self) and item in self[idx])
     def subset(self, other):
         return all(_iv_subset(iv, other) for iv in self)
+    def contains_interval(self, iv):
+        return _iv_subset(iv, self)
     def supset(self, other):
         return other.subset(self)
     def proper_subset(self,other):
@@ -144,6 +150,10 @@ class IntervalSet(tuple):
         for iv in other:
             _iv_union(lst, iv)
         return super().__new__(self.__class__,lst)
+    def interior(self):
+        return super().__new__(self.__class,(iv.interior() for iv in self))
+    def closure(self):
+        return super().__new__(self.__class,(iv.closure() for iv in self))
 
 
     # -----------------------------------------------
@@ -183,7 +193,7 @@ class Interval(tuple):
     # construction methods
     # -----------------------------------------------
     @classmethod
-    def from_lr(cls,left,right):
+    def from_lr(cls,left=(None,False),right=(None,False)):
         return cls(a=left[0],b=right[0],has_left=left[1],has_right=right[1])
 
     @classmethod
@@ -278,7 +288,6 @@ class Interval(tuple):
     # -----------------------------------------------
     def interior(self):
         return Interval.open(self.a,self.b)
-
     def closure(self):
         return Interval.closed(self.a,self.b)
 

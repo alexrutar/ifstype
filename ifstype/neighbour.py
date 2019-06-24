@@ -1,8 +1,6 @@
 import typing
 from sortedcontainers import SortedSet
-from sympy import Rational
-
-from .numeric import Constants as C
+from .numeric import Rational, Constants as C
 
 class Neighbour(typing.NamedTuple):
     "A Neighbour object, with operations defined with respect to a net_iv"
@@ -25,7 +23,7 @@ class NeighbourSet(tuple):
         return super().__new__(self,sorted(neighbours))
 
     def __str__(self):
-        return str(tuple((nb.a,nb.L) for nb in self))
+        return ", ".join(f"({nb.a},{nb.L})" for nb in self)
 
 
 # a NeighbourManager is any class which supports the functions

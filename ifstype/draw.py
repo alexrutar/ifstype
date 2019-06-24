@@ -1,5 +1,5 @@
 import cairo
-from .interval import Interval
+from .interval import Interval, IntervalSet
 
 def draw(f):
     def wrapper(*args,**kwds):
@@ -127,7 +127,7 @@ class CrContext(cairo.Context):
         if label_endpoints:
             translate += 0.00707
         self.vshift(translate)
-        mp = (iv.a+iv.b)/2
+        mp = float(iv.a+iv.b)/2
         if not no_line:
             self.move_to(iv.a,0)
             self.line_to(iv.b,0)

@@ -1,11 +1,12 @@
-from .ifs_examples import *
 from .generations import FiniteType, InfiniteType
 from .draw import Visual
+from .rational import Rational
 
-def draw_finite_type(ifs,filename="example.pdf"):
+def run_finite_type(ifs):
     "An example drawing illustrating the interval and net methods"
+    print(ifs)
     gn = FiniteType(ifs)
-    diagram = Visual(gn,filename,1,scale=3)
+    diagram = Visual(gn,"generations.pdf",1,scale=3)
     for alpha in gn.ifs.transition_gens(stop=gn.new_transition_stop):
         iv_net = gn.gen(alpha)
         diagram.interval(iv_net)
@@ -13,9 +14,11 @@ def draw_finite_type(ifs,filename="example.pdf"):
 
     diagram.nb_set()
     diagram.show()
+    gn.transition_graph.draw("graph.pdf")
 
-def draw_infinite_type(ifs, stop=Rational(1,25),filename="example.pdf"):
+def run_infinite_type(ifs, stop=Rational(1,25),filename="example.pdf"):
     "An example drawing illustrating the interval and net methods"
+    print(ifs)
     gn = InfiniteType(ifs)
     diagram = Visual(gn,filename,1,scale=3)
     for alpha in gn.ifs.transition_gens(stop=stop):

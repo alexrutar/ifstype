@@ -4,7 +4,7 @@ import itertools
 import typing
 from sortedcontainers import SortedSet,SortedList
 
-from .numeric import Rational, Constants as C
+from .rational import Rational, Constants as C
 from .interval import Interval
 
 def app(word,target):
@@ -86,7 +86,7 @@ class CtrFunc(typing.NamedTuple):
         return cls(C.n_1,C.n_0)
 
     def fixed_point(self):
-        return self.a/(1-self.r)
+        return self.a/(C.n_1-self.r)
 
     def compose(self, ct_f):
         return CtrFunc(self.r*ct_f.r, self.a+self.r*ct_f.a)
@@ -103,7 +103,7 @@ class CtrFunc(typing.NamedTuple):
         "Normalize with respect to the given interval."
         cur_iv = self.interval(iv=interval)
         new_iv = (cur_iv - interval.a)/interval.delta
-        if self.r > 0:
+        if self.r > C.n_0:
             return CtrFunc(new_iv.delta, new_iv.a)
         else:
             return CtrFunc(-new_iv.delta, new_iv.b)
@@ -112,9 +112,9 @@ class CtrFunc(typing.NamedTuple):
     def __call__(self, x):
         return self.r*x+self.a
     def __repr__(self):
-        return "f:x*{}+{}".format(self.r,self.a)
+        return f"f:{self.r}*x + {self.a}"
     def __str__(self):
-        return "f:x*{}+{}".format(self.r,self.a)
+        return f"f:{self.r}*x + {self.a}"
 
 
 class IFS:
@@ -122,12 +122,12 @@ class IFS:
     def __init__(self, funcs, probabilities):
         """funcs is a (CtrFunc, p) pair where 0<p<1"""
         # check params
-        assert all(0<abs(f.r) and abs(f.r)<1 for f in funcs), "IFS contraction factors must have 0<|r|<1"
-        assert all(0<=p and p<1 for p in probabilities) and sum(probabilities) == 1, "IFS probabilities must be non-negative and sum to 1"
+        assert all(C.n_0<abs(f.r) and abs(f.r)<C.n_1 for f in funcs), "IFS contraction factors must have 0<|r|<1"
+        assert all(C.n_0<=p and p<C.n_1 for p in probabilities) and sum(probabilities) == C.n_1, "IFS probabilities must be non-negative and sum to 1"
 
         sorted_f_pairs = sorted(zip(funcs,probabilities),key=lambda x:x[0].a)
 
-        if any(f.r<0 for f in funcs):
+        if any(f.r<C.n_0 for f in funcs):
             print("Warning: convex hull normalization doesn't work with negative factors! Assuming convex hull is [0,1]")
             self.f = [f[0] for f in sorted_f_pairs]
         else:
@@ -145,6 +145,8 @@ class IFS:
         self.rmin = min(ab)
         self.rmax = max(ab)
 
+    def __str__(self):
+        return "IFS with normalized contraction functions\n- " + "\n- ".join(f"{f}" for f in self.f) + "\nand probabilities\n- " + "\n- ".join(f"{p}" for p in self.p)
 
     @staticmethod
     def convex_hull(funcs):
@@ -155,9 +157,6 @@ class IFS:
     @classmethod
     def uniform_p(cls, *funcs):
         return cls(funcs,[Rational(1,len(funcs)) for _ in funcs])
-        
-    def __str__(self):
-        return str((self.f,self.p))
 
     def transition_gens(self,stop=0):
         """

@@ -1,3 +1,5 @@
+import logging
+
 import itertools
 import typing
 import operator
@@ -8,7 +10,7 @@ from sortedcontainers import SortedList,SortedDict,SortedSet
 from .interval import Interval, NetInterval, View, IntervalSet
 from .ifs import Word
 from .neighbour import NeighbourSet, Neighbour, InfiniteNbMgr, FiniteNbMgr
-from .numeric import Constants as C, Rational
+from .rational import Constants as C, Rational
 
 
 # TODO: Write a class GeometricGen, which is essentially the same as Gen, but it doesn't save the words at all
@@ -202,6 +204,7 @@ class BaseGenerations:
         """Compute the Gen object of generation alpha corresponding to the specified interval, and caches the result in self._gens
         We use as a starting point the set of all words of generation beta where beta >= alpha is minimal, over an interval containing interval
         """
+        print(f"Calling with {alpha}, {view}")
         if view is None:
             view = View(Interval(0,1))
 

@@ -1,29 +1,11 @@
 import typing
 import operator
 import itertools
-from sympy import oo
-from .numeric import Rational
-#  from sortedcontainers import SortedList
+from sympy import oo # TODO: write custom infinity class
 from bisect import bisect
 
+from .rational import Rational, Constants as C
 
-
-#  def _consume_one(iv_sl):
-    #  iv = iv_sl[0]
-    #  while True:
-        #  idx = iv_sl.bisect_right(iv.rcpl()) # since iv in iv_sl, idx >= 1
-        #  new_iv = Interval.from_lr(iv.left,max(iv_sl[idx-1].right,iv.right))
-        #  if iv == new_iv:
-            #  break
-        #  iv = new_iv
-    #  return (new_iv,SortedList(iv_sl[idx:]))
-
-#  def _reduce(iv_sl):
-    #  out = SortedList([])
-    #  while len(iv_sl) != 0:
-        #  iv, iv_sl = _consume_one(iv_sl)
-        #  out.add(iv)
-    #  return out
 # methods which mutate a list in place
 # union
 def _iv_union(lst,iv):
@@ -348,7 +330,7 @@ class Interval(tuple):
 
     @check_empty
     def __truediv__(self,cnst: Rational):
-        if cnst < 0:
+        if cnst < C.n_0:
             return self._same(self.b / cnst, self.a / cnst)
         else:
             return self._same(self.a / cnst, self.b / cnst)

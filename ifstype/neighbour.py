@@ -1,6 +1,6 @@
 import typing
 from sortedcontainers import SortedSet
-from .numeric import Rational, Constants as C
+from .rational import Rational, Constants as C
 
 class Neighbour(typing.NamedTuple):
     "A Neighbour object, with operations defined with respect to a net_iv"

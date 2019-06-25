@@ -3,8 +3,8 @@
 
 # Main files
 !ifstype/
-!/latex/*.tex
-!/latex/*.pdf
+!latex/*.tex
+!latex/*.pdf
 !Makefile
 !.gitignore
 

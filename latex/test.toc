@@ -1,4 +1,0 @@
-\contentsline {chapter}{\chapternumberline {I}IFS Examples}{1}{chapter.0.1}
-\contentsline {section}{\numberline {1}Old model}{1}{section.0.1.1}
-\contentsline {section}{\numberline {2}IFS 2}{1}{section.0.1.2}
-\contentsline {section}{\numberline {3}New Stuff}{1}{section.0.1.3}

@@ -204,7 +204,7 @@ class BaseGenerations:
         """Compute the Gen object of generation alpha corresponding to the specified interval, and caches the result in self._gens
         We use as a starting point the set of all words of generation beta where beta >= alpha is minimal, over an interval containing interval
         """
-        print(f"Calling with {alpha}, {view}")
+        logging.info(f"Calling with {alpha}, {view}")
         if view is None:
             view = View(Interval(0,1))
 

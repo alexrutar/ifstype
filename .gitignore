@@ -1,5 +1,16 @@
+# Ignore everything
+/*
+
+# Main files
+!/ifstype/
+!Makefile
+!.gitignore
+
+
+# test
+!test.py
+
+# and ignore more things
+ifstype/__pycache__
 .DS_Store
-__pycache__
 *.swp
-*.ipynb
-sage

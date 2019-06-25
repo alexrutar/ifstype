@@ -71,7 +71,7 @@ class FiniteNbMgr:
         return iter(self.nb_set_types)
 
     def __str__(self):
-        return "\n".join(f"{v} : {k}" for k,v in self)
+        return "\n".join(f"{self.nb_set_type(nb)} : {nb}" for nb in self)
 
     def nb_set_type(self, nb):
         return self.nb_set_types.index(nb)

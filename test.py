@@ -6,7 +6,6 @@ from sympy.polys.polytools import PurePoly
 from sympy.abc import x
 from ifstype.polynomial import Poly
 
-import ifstype.ifs_examples
 
 def test_poly_gcd():
     pol = PurePoly(x+sy_R(1,3))-PurePoly(x)
@@ -35,9 +34,13 @@ def test_algebraics():
     print(float(anf.alpha()/(Rational(1)+anf.alpha())))
     print(fl/(1+fl))
 
+def run_all_examples():
+    import ifstype.ifs_examples as examples
+    for name in examples.__all__:
+        print(f"\nRunning {name}")
+        run_finite_type(examples.__dict__[name](),name)
 if __name__ == "__main__":
-    #  test_algebraics()
-    run_finite_type(ifs5())
+    run_finite_type(ifs2(),"test")
 
 
 

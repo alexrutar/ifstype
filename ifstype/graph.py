@@ -17,6 +17,7 @@ class TransitionGraph(nx.DiGraph):
         self.labels = {nd:eval_func(nd) for nd in self}
 
     def draw(self,filename="graph.pdf"):
+        fig = plt.figure()
         pos = graphviz_layout(self)
         comps = list(nx.strongly_connected_components(self))
         colour_list = plt.cm.Paired(np.linspace(0,1,len(comps)))

@@ -40,7 +40,8 @@ def run_all_examples():
         print(f"\nRunning {name}")
         run_finite_type(examples.__dict__[name](),name)
 if __name__ == "__main__":
-    run_finite_type(ifs2(),"test")
+    #  run_finite_type(ifs2(),"test")
+    run_all_examples()
 
 
 

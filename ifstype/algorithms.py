@@ -9,7 +9,7 @@ def run_finite_type(ifs,file_tag):
     with open(file_tag +"_info.txt",'w+') as f:
         f.write("IFS info:\n")
         f.write(str(ifs))
-        f.write("Neighbour sets:\n")
+        f.write("\n\nNeighbour sets:\n")
         f.write(str(gn.nb_mgr))
     for alpha in gn.ifs.transition_gens(stop=gn.new_transition_stop):
         iv_net = gn.gen(alpha)

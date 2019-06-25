@@ -2,7 +2,9 @@
 /*
 
 # Main files
-!/ifstype/
+!ifstype/
+!/latex/*.tex
+!/latex/*.pdf
 !Makefile
 !.gitignore
 

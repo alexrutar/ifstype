@@ -6,7 +6,7 @@ from sympy.polys.polytools import PurePoly
 from sympy.abc import x
 from ifstype.polynomial import Poly
 
-from ifs_examples import *
+import ifs_examples
 
 from graph_tool.all import *
 import matplotlib
@@ -39,30 +39,14 @@ def test_algebraics():
     print(fl/(1+fl))
 
 def run_all_finite():
-    for name in finite_names:
+    for name in ifs_examples.finite_names:
         print(f"Running {name}")
-        run_finite_type(examples.__dict__[name](),name)
-
-def test_graph():
-    g = Graph()
-    for _ in range(6):
-        g.add_vertex()
-    g.add_edge(g.vertex(0), g.vertex(1))
-    g.add_edge(g.vertex(1), g.vertex(2))
-    g.add_edge(g.vertex(2), g.vertex(5))
-    g.add_edge(g.vertex(5), g.vertex(1))
-    g.add_edge(g.vertex(1), g.vertex(1))
-
-    pos = sfdp_layout(g)
-    comp, hist = label_components(g)
-    graph_draw(g, pos, vertex_size=10, vertex_fill_color=comp, edge_pen_width=2,
-               vcmap=matplotlib.cm.gist_heat_r, output="test.pdf")
-    print(comp.a)
-    #  print(comp)
+        run_finite_type(ifs_examples.__dict__[name](),"out/"+name)
 
 if __name__ == "__main__":
+    run_all_finite()
     #  test_graph()
-    run_finite_type(ifs6(),file_tag="test")
+    #  run_finite_type(ifs_examples.not_sure(),file_tag="test")
     #  run_infinite_type(ifs_osc(),stop=Rational(1,50),filename="infinite_non_overlap.pdf")
     #  get_alpha_density(ifs_osc(),count=20)
 

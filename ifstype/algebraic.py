@@ -24,7 +24,7 @@ class AlgebraicNumber:
         self._poly = poly
 
     def __repr__(self):
-        return f"x={self.anf.expr}, expr={self._poly}"
+        return f"x={self.anf.expr_float}, expr={self._poly}"
     def __str__(self):
         return f"{self._poly.with_symbol('a')}"
 

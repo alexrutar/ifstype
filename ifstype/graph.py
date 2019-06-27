@@ -1,14 +1,15 @@
 import matplotlib
 from collections import Counter
 import graph_tool as gt
+from math import sqrt
 
 class TransitionGraph:
     # take any nb_mgr in which the numbering is not changing
     def __init__(self, nb_mgr):
         # graph initialization
         self.g = gt.Graph()
-        for _ in range(nb_mgr.num_nb_sets()):
-            self.g.add_vertex()
+        #  for _ in range(nb_mgr.num_nb_sets()):
+        self.g.add_vertex(nb_mgr.num_nb_sets())
 
         for nb_set in nb_mgr:
             transition = nb_mgr.transitions[nb_set]
@@ -53,7 +54,6 @@ class TransitionGraph:
             if non_loop_isolated(v):
                 comp[v] = -1
 
-        print(comp[0])
-
+        ht = 100*int(sqrt(self.g.num_vertices()))+100
         gt.draw.graph_draw(self.g, pos, vertex_size=14,vertex_text=self.g.vertex_index,vertex_fill_color=comp, edge_pen_width=2,
-                   vcmap=matplotlib.cm.gist_ncar, output=filename)
+                   vcmap=matplotlib.cm.gist_ncar, output=filename, output_size=(ht,ht))

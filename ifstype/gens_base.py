@@ -19,7 +19,7 @@ class Gen:
     In this sense, we only save the words as reference for the functions.
     If forgetful is set to true, only one word per function is saved.
     """
-    def __init__(self,genkey,words,forgetful=False,full_K=False):
+    def __init__(self,genkey,words,forgetful=True,full_K=False):
         self.alpha = genkey.alpha
         # computing the iteration is pretty heavy, there's probably a faster way to do it
         # maybe maintain a representative set? especially in the finite type case, if loading from saved transition maps
@@ -41,7 +41,7 @@ class Gen:
                 self.f_dict[w.f].add(w)
         else:
             self.f_dict = {w.f:(w,) for w in self._words}
-            self._words = tuple(w[0] for w in w.f.values())
+            self._words = tuple(w[0] for w in self.f_dict.values())
 
         endpoints = SortedSet(ep for ep in itertools.chain.from_iterable((f(C.n_0),f(C.n_1)) for f in self.fs()) if ep in self.view)
 

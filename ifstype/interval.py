@@ -1,7 +1,7 @@
 import typing
 import operator
 import itertools
-from sympy import oo # TODO: write custom infinity class
+from sympy import oo
 from bisect import bisect
 
 from .rational import Rational, Constants as C

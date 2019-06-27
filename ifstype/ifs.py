@@ -158,7 +158,7 @@ class IFS:
     def uniform_p(cls, *funcs):
         return cls(funcs,[Rational(1,len(funcs)) for _ in funcs])
 
-    def transition_gens(self,stop=0):
+    def transition_gens(self,stop=0,count=None):
         """
         Compute the numbers which look like a product of |r_i| that are >= stop in increasing order.
         Defaults to an infinite generator.
@@ -166,7 +166,9 @@ class IFS:
         """
         abs_r = set(abs(r) for r in self.r)
         sorted_r=SortedSet([C.n_base])
-        for n,j in ((i,self.rmax**i) for i in itertools.count(0)):
+        itbl = itertools.count(0)
+        ct = 0
+        for n,j in ((i,self.rmax**i) for i in itbl):
             sorted_r.update(x for x in (reduce(operator.mul,tup,1) for tup in itertools.product(abs_r,repeat=n)) if x>=stop)
             while True:
                 try:
@@ -174,6 +176,9 @@ class IFS:
                 except IndexError:
                     return
                 yield cur
+                ct += 1
+                if count is not None and ct >= count:
+                    return
                 if cur == j:
                     break
 

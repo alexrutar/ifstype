@@ -9,19 +9,15 @@ from sortedcontainers import SortedList,SortedDict,SortedSet
 
 from .interval import Interval, NetInterval, View, IntervalSet
 from .ifs import Word
-from .neighbour import NeighbourSet, Neighbour, InfiniteNbMgr, FiniteNbMgr
+from .neighbour import NeighbourSet, Neighbour, TransitionType
 from .rational import Constants as C, Rational
 
 
-# TODO: Write a class GeometricGen, which is essentially the same as Gen, but it doesn't save the words at all
-# subsequent generations can be computed directly based on the IFS dynamics (if it is finite type)
-# use this for FiniteType computations, where you can generate the transition maps using the standard object then go to the faster version after computing everything in advance.
 class Gen:
     """A Gen is essentially a forgetful generation with masking.
     One can determine the complete behaviour of the children when you know what the functions associated to the words are.
     In this sense, we only save the words as reference for the functions.
     If forgetful is set to true, only one word per function is saved.
-    TODO: allow passing forgetful at generations level.
     """
     def __init__(self,genkey,words,forgetful=False,full_K=False):
         self.alpha = genkey.alpha
@@ -183,7 +179,7 @@ class BaseGenerations:
 
         """
         ch_gen = self.im_children(net_iv)
-        return tuple(((ch.a - net_iv.a)/net_iv.delta, ch.delta/net_iv.delta, self.nb_set(ch)) for ch in ch_gen)
+        return TransitionType(((ch.a - net_iv.a)/net_iv.delta, ch.delta/net_iv.delta, self.nb_set(ch)) for ch in ch_gen)
 
     # neighbour set functions
     def nb_set(self, net_iv):
@@ -204,9 +200,10 @@ class BaseGenerations:
         """Compute the Gen object of generation alpha corresponding to the specified interval, and caches the result in self._gens
         We use as a starting point the set of all words of generation beta where beta >= alpha is minimal, over an interval containing interval
         """
-        logging.info(f"Calling with {alpha}, {view}")
         if view is None:
             view = View(Interval(0,1))
+
+        print(f"Computing generation {alpha} with view {view}")
 
         genkey = GenKey(alpha,view)
         # compute the starting point, which is the smallest interval of generation beta > alpha

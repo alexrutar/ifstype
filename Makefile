@@ -4,6 +4,6 @@ test:
 draw: test
 	-open example.pdf
 profile:
-	-python3 -m cProfile -o output.pstats test.py
-	-gprof2dot -f pstats output.pstats | dot -Tsvg -o output.svg
-	-open output.svg
+	-python3 -m cProfile -o profile/output.pstats test.py
+	-gprof2dot -f pstats profile/output.pstats | dot -Tsvg -o profile/output.svg
+	-open profile/output.svg

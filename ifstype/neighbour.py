@@ -29,13 +29,9 @@ class NeighbourSet(tuple):
 # a NeighbourManager is any class which supports the functions
 # - 
 class InfiniteNbMgr:
-    def __init__(self, existing_nb_sets=None):
-        if existing_nb_sets is None:
-            self.nb_set_types = {NeighbourSet((Neighbour(C.n_0,C.n_1),)):0}
-            self.num_nb_set = 1
-        else:
-            self.nb_set_types = {}
-            self.update(existing_nb_sets)
+    def __init__(self):
+        self.nb_set_types = {NeighbourSet((Neighbour(C.n_0,C.n_1),)):0}
+        self.num_nb_set = 1
         self.is_complete = False
 
     def __str__(self):
@@ -62,10 +58,11 @@ class FiniteNbMgr:
         """Takes a generation object as an argument in order to compute all the neighbour types.
         """
         self.is_complete = True
-        if existing_nb_sets is None:
-            self.nb_set_types = SortedSet([])
-        else:
-            self.nb_set_types = SortedSet(existing_nb_sets)
+        self.nb_set_types = SortedSet([])
+
+        # transition / matrices are dictionaries
+        self.transitions={}
+        self.transition_matrix={}
 
     def __iter__(self):
         return iter(self.nb_set_types)
@@ -73,12 +70,29 @@ class FiniteNbMgr:
     def __str__(self):
         return "\n".join(f"{self.nb_set_type(nb)} : {nb}" for nb in self)
 
+    def num_nb_sets(self):
+        return len(self.nb_set_types)
+
     def nb_set_type(self, nb):
         return self.nb_set_types.index(nb)
 
-    # should never need to add or update new elements!
     def update(self, nb_iter):
-        pass
+        raise NotImplementedError
 
-    def add(self,nb):
+    def add(self,nb,ttype):
         self.nb_set_types.add(nb)
+        self.transitions[nb] = ttype
+
+class TransitionType:
+    # computes and stores the transition type and transition matrix to each subtype
+    def __init__(self, transition_gen):
+        self.ttype = tuple(transition_gen)
+
+    def shifts(self):
+        return (tty[0] for tty in self.ttype)
+
+    def deltas(self):
+        return (tty[1] for tty in self.ttype)
+
+    def nb_sets(self):
+        return (tty[2] for tty in self.ttype)

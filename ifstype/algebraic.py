@@ -14,8 +14,9 @@ def check_other(f):
         elif isinstance(other,AlgebraicNumber) and self.anf == other.anf:
             return f(self, other)
         else:
-            raise ValueError("Inequivalent algebraic numbers!")
+            raise ValueError(f"Inequivalent algebraic numbers! Other is a {type(other)}.")
     return valid_anf
+
 
 class AlgebraicNumber:
     def __init__(self, anf, poly):

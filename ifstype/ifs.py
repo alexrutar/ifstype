@@ -156,6 +156,7 @@ class IFS:
         return Interval.closed(min(iterates), max(iterates))
 
     def convex_hull(self):
+        """Convex Hull computation as adapted from József Vass' paper, which can be found at https://arxiv.org/abs/1502.03788 Section 3.2."""
         def value(tup):
             return sum(1 for a in tup if self.r[a] < 0) % 2
 

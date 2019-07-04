@@ -69,8 +69,48 @@ def ifs7():
     return IFS.uniform_p(
             CtrFunc(r,0),
             CtrFunc(r,1-r))
+
+def test_0():
+    n = 3
+    z_list = [-1,3,4,7]
+    return IFS.uniform_p(*[CtrFunc(Rational(1,n),z) for z in z_list])
+
+def test_1():
+    # probably equicontractive finite type
+    r = Rational(111,371)
+    return IFS.uniform_p(
+        CtrFunc(r,0),
+        CtrFunc(r,r),
+        CtrFunc(r,1))
+
+def test_2(rho=Rational(1,5),r=Rational(3,7)):
+    # very similar to ifs2
+    assert rho+2*r-rho*r <= 1
+    return IFS.uniform_p(
+            CtrFunc(rho,0),
+            CtrFunc(r,rho*(1-r)),
+            CtrFunc(r,1-r))
+
+def test_3():
+    expr = sy_R(1,3)*(1 + (19-3*sqrt(33))**sy_R(1,3) + (19+3*sqrt(33))**sy_R(1,3))
+    anf = AlgebraicNumberFactory.from_sympy(expr)
+    r = 1/anf.alpha()
+    return IFS.uniform_p(
+            CtrFunc(r,0),
+            CtrFunc(r,r**2),
+            CtrFunc(r,r))
+
+def test_4(rho=Rational(1,5),r=Rational(3,7)):
+    # very similar to ifs2
+    assert rho+2*r-rho*r <= 1
+    return IFS.uniform_p(
+            CtrFunc(rho,0),
+            CtrFunc(r,rho*(1-r)),
+            CtrFunc(r,1-r))
+
+
+# infinite type
 def inf_ifs0():
-    # basic equicontractive ifs with one overlap
     return IFS.uniform_p(
             CtrFunc(Rational(3,7),0),
             CtrFunc(Rational(2,3),Rational(1,3)))
@@ -81,15 +121,6 @@ def ifs_osc():
             CtrFunc(Rational(3,7),0),
             CtrFunc(Rational(1,3),Rational(2,3)))
 
-# not sure about these
-def not_sure():
-    expr = sy_R(1,3)*(1 + (19-3*sqrt(33))**sy_R(1,3) + (19+3*sqrt(33))**sy_R(1,3))
-    anf = AlgebraicNumberFactory.from_sympy(expr)
-    r = 1/anf.alpha()
-    return IFS.uniform_p(
-            CtrFunc(r,0),
-            CtrFunc(r,r**2),
-            CtrFunc(r,r))
 
 def inf_ifs3():
     # not finite type

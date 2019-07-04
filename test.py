@@ -44,9 +44,12 @@ def run_all_finite():
         run_finite_type(ifs_examples.__dict__[name](),"out/"+name)
 
 if __name__ == "__main__":
-    run_all_finite()
+    #  run_all_finite()
     #  test_graph()
-    #  run_finite_type(ifs_examples.not_sure(),file_tag="test")
+    #  run_finite_type(ifs_examples.test_3(),file_tag="test")
+    ifs_examples.test_1()
+    ifs_examples.test_2()
+    ifs_examples.test_3()
     #  run_infinite_type(ifs_osc(),stop=Rational(1,50),filename="infinite_non_overlap.pdf")
     #  get_alpha_density(ifs_osc(),count=20)
 

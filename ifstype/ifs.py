@@ -117,6 +117,7 @@ class CtrFunc(typing.NamedTuple):
         return f"f:{self.r}*x + {self.a}"
 
 
+
 class IFS:
     # an IFS is essentially a factory for words and ctr funcs
     def __init__(self, funcs, probabilities):
@@ -127,32 +128,48 @@ class IFS:
 
         sorted_f_pairs = sorted(zip(funcs,probabilities),key=lambda x:x[0].a)
 
-        if any(f.r<C.n_0 for f in funcs):
-            print("Warning: convex hull normalization doesn't work with negative factors! Assuming convex hull is [0,1]")
-            self.f = [f[0] for f in sorted_f_pairs]
-        else:
-            cvx_hull = self.convex_hull(funcs)
-            self.f = [f[0].normalize(cvx_hull) for f in sorted_f_pairs]
+        self.idx = tuple(range(len(funcs)))
 
         self.p = [f[1] for f in sorted_f_pairs]
 
+        self.f = [f[0] for f in sorted_f_pairs]
         self.r = [f.r for f in self.f]
         self.a = [f.a for f in self.f]
-
-        self.idx = tuple(range(len(funcs)))
+        self.normalize()
 
         ab = [abs(r) for r in self.r]
-        self.rmin = min(ab)
-        self.rmax = max(ab)
+        rmin = min(ab)
+        rmax = max(ab)
+
+
+    def normalize(self):
+        cvx_hull = self.convex_hull()
+        pos_cvx_hull = self.pos_convex_hull()
+        assert cvx_hull == pos_cvx_hull
+        self.f = [f.normalize(cvx_hull) for f in self.f]
+        self.a = [f.a for f in self.f]
+
+
+    def pos_convex_hull(self):
+        fixed_points = [f.fixed_point() for f in self.f]
+        iterates = set(itertools.chain.from_iterable({f(p) for p in fixed_points} for f in self.f))
+        return Interval.closed(min(iterates), max(iterates))
+
+    def convex_hull(self):
+        def value(tup):
+            return sum(1 for a in tup if self.r[a] < 0) % 2
+
+        n=4
+        all_x = ((t for t in itertools.product(range(len(self.f)),repeat=n) if value(t) == 0) for n in range(1,n+1))
+        all_b = (itertools.product(range(len(self.f)),repeat=n) for n in range(n-1,-1,-1))
+        all_addresses = itertools.chain.from_iterable(itertools.product(b_vals,x_vals) for b_vals, x_vals in zip(all_b,all_x))
+        ext = [self.ct_from_tuple(b)(self.ct_from_tuple(x).fixed_point()) for b,x in all_addresses]
+        return Interval.closed(min(ext),max(ext))
+
 
     def __str__(self):
         return "IFS with normalized contraction functions\n- " + "\n- ".join(f"{f}" for f in self.f) + "\nand probabilities\n- " + "\n- ".join(f"{p}" for p in self.p)
 
-    @staticmethod
-    def convex_hull(funcs):
-        fixed_points = {f.fixed_point() for f in funcs}
-        iterates = set(itertools.chain.from_iterable({f(p) for p in fixed_points} for f in funcs))
-        return Interval.closed(min(iterates), max(iterates))
 
     @classmethod
     def uniform_p(cls, *funcs):
@@ -182,10 +199,10 @@ class IFS:
                 if cur == j:
                     break
 
-    def ct_from_word(self,*ab):
+    def ct_from_tuple(self,tup):
         "Create the contraction function associated to the tuple argument"
         f = CtrFunc.id()
-        for letter in ab:
+        for letter in tup:
             f = f.compose(self.f[letter])
         return f
 

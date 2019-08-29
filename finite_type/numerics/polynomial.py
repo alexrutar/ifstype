@@ -5,6 +5,10 @@ class Poly(tuple):
     """Tuple polynomial class with rational coefficients and fast initialization.
     Automatically computes equality by comparing coefficients."""
     def __new__(cls, coefs):
+        """Create new polynomial from coefficient list.
+        Automatically removes trailing zeros on the right.
+        If coefs = (c0,c1,...,cn), resulting polynomial is c0+c1*x+ ... +cn*x^n
+        """
         internal = list(coefs)
         while internal and internal[-1] == 0:
             internal.pop()
@@ -14,6 +18,13 @@ class Poly(tuple):
             return super().__new__(cls, (C.n_0,))
         else:
             return super().__new__(cls, internal)
+
+    def __hash__(self):
+        # hash should identify equally with the coefficient, in the case the polynomial has degree 0
+        if len(self) == 1:
+            return hash(self[0])
+        else:
+            return super().__hash__()
 
     # TODO: string methods are total garbage (but they work)
     def _parse_coef_pair(self,r,n,symb="x"):

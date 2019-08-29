@@ -17,7 +17,6 @@ def check_other(f):
             raise ValueError(f"Inequivalent algebraic numbers! Other is a {type(other)}.")
     return valid_anf
 
-
 class AlgebraicNumber:
     def __init__(self, anf, poly):
         self.anf = anf # pointer to the factory
@@ -27,6 +26,8 @@ class AlgebraicNumber:
         return f"x={self.anf.expr_float}, expr={self._poly}"
     def __str__(self):
         return f"{self._poly.with_symbol('a')}"
+    def as_latex(self,symb='a'):
+        return f"{self._poly.with_symbol(symb)}"
 
     def __hash__(self):
         return hash(self._poly)

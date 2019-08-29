@@ -147,8 +147,6 @@ class IntervalSet(tuple):
     def __repr__(self):
         return f"IntervalSet" + super().__repr__()
 
-
-
 def check_empty(f):
     def wrapper(self,cnst):
         if self.is_empty:
@@ -163,14 +161,13 @@ class Interval(tuple):
     b = property(operator.itemgetter(2))
     cmp_left = property(operator.itemgetter(0,1))
     cmp_right = property(operator.itemgetter(2,3))
-    def __new__(cls,a=None,b=None,has_left=True,has_right=True,**kwargs):
+    def __new__(cls,a=None,b=None,has_left=True,has_right=True):
         # as arguments, has_left=False means open, has_right=True=False means open
         # internally, to maintain ordering, False on the left represents closed, and False on the right represents open
-
         if a is None or b is None or a>b or (a==b and (has_left,has_right) != (True,True)):
-            return super().__new__(cls,(None,True,None,False,*kwargs.values()))
+            return super().__new__(cls,(None,True,None,False))
         else:
-            return super().__new__(cls,(a,not has_left, b, has_right,*kwargs.values()))
+            return super().__new__(cls,(a,not has_left, b, has_right))
     # -----------------------------------------------
     # construction methods
     # -----------------------------------------------
@@ -342,24 +339,4 @@ class Interval(tuple):
     @check_empty
     def __sub__(self,cnst: Rational):
         return self._same(self.a - cnst, self.b - cnst)
-
-
-
-class NetInterval(Interval):
-    """A special interval type representing a net interval of generation alpha.
-    This interval is always closed, and if you perform any operations on it, you just get a plain interval back."""
-    alpha = property(operator.itemgetter(4))
-    def __new__(cls,a,b,alpha):
-        self = super().__new__(cls,a=a,b=b,alpha=alpha)
-        return self
-
-    # representation
-    def __str__(self):
-        return f"NetIv({self.alpha})[{self.a},{self.b}]"
-    def __repr__(self):
-        return f"NetInterval(left={self.left},right={self.right},alpha={self.alpha})"
-
-class View(IntervalSet):
-    def __new__(cls, *ivs):
-        return super().__new__(cls,iv_gen=ivs)
 

@@ -2,7 +2,7 @@
 /*
 
 # Main files
-!finite_type/
+!ifstype/
 !latex/*.tex
 !latex/*.pdf
 !Makefile

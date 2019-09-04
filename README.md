@@ -17,8 +17,8 @@ Here is an example:
 from ifstype import CtrFunc
 from ifstype.exact import Rational
 
-a=Rational(1,5)
-b=Rational(1,8))
+a = Rational(1,5)
+b = Rational(1,8))
 
 ifs = IFS([CtrFunc(a,0),
            CtrFunc(b,a-a*b),
@@ -27,11 +27,8 @@ ifs = IFS([CtrFunc(a,0),
 
 ```
 Here we have an example of a family if IFS, parametrized by values `a` and `b`.
-
 A CtrFunc instance represents a contraction function `CtrFunc(r,d)` is equivalent to the affine contraction function `f(x)=r*x+d`.
 
-The decorator `ifs_family` is a convenience used to streamline the creation of an IFS instance.
-We then this function to generate a specific IFS.
 This library also provides two general functions: `verify_wft` and `run_ifs`.
 Called without any keyword arguments, `run_ifs` takes two parameters: a foldername, and an IFS instance.
 ```python

@@ -1,4 +1,4 @@
-from .rational import Rational, Constants as C
+from .rational import Fraction, Constants as C
 import itertools
 
 class Poly(tuple):
@@ -78,7 +78,7 @@ class Poly(tuple):
         deg = max(coef_dct.keys())[0]
         lst = [C.n_0 for _ in range(deg+1)]
         for k,v in coef_dct.items():
-            lst[k[0]] = Rational(v.p,v.q)
+            lst[k[0]] = Fraction(v.p,v.q)
         return Poly(lst)
 
     @classmethod

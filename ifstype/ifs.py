@@ -1,107 +1,234 @@
 """
-Core functions and classes concerning the technical operation of Iterated Function Systems.
+.. module:: ifs
+   :synopsis: Core functionality for IFS simulation.
+
+.. moduleauthor:: Alex Rutar <github.com/alexrutar>
 """
+
 import itertools
 import numpy as np
 import typing
 import inspect
+import functools
+from quicktions import Fraction
 
-from .exact import Rational, Constants as C, Interval
+from .exact import Constants as C, Interval
 from .exact.symbolic import SymbolicRing, SymbolicMatrix
 
-class CtrFunc(typing.NamedTuple):
-    """A CtrFunc class on parameters (r,d) represents a contraction function f(x)=r*x+d.
+class AffineFunc(typing.NamedTuple):
+    """An AffineFunc is a real-valued affine function ``f(x)=r*x+d``.
+
+    An AffineFunc is immutable.
+
+    Core attributes:
+
+    * :attr:`AffineFunc.r`
+    * :attr:`AffineFunc.d`
+
+    Methods for creating the function:
+
+    * :meth:`AffineFunc.id`
+
+    Methods to query attributes:
+
+    * :meth:`AffineFunc.endpoints`
+    * :meth:`AffineFunc.fixed_point`
+    * :meth:`AffineFunc.interval`
+    * :meth:`AffineFunc.sign`
+
+    Methods for behaviour as a function:
+
+    * :meth:`AffineFunc.__call__`
+    * :meth:`AffineFunc.compose`
+    * :meth:`AffineFunc.inverse`
+
+    Methods for miscellany:
+
+    * :meth:`AffineFunc.__repr__`
+    * :meth:`AffineFunc.__str__`
+
     """
-    r: Rational
-    d: Rational
+    r: Fraction
+    d: Fraction
 
     @classmethod
     def id(cls):
-        """The identity function."""
+        """Create the affine function ``f`` such that ``f(x)=x``, the identity affine function.
+
+        :return: identity affine function
+        """
         return cls(C.n_1,C.n_0)
 
     def sign(self):
+        """Determine the sign of the affine function.
+
+        :return: True if :attr:`r` is strictly positive, else False
+        """
         return self.r>0
 
-    def inverse(self):
-        """Compute the inverse function of the linear map."""
-        return CtrFunc(1/self.r,-self.d/self.r)
-
-    def compose(self, ct_f):
-        """Compute the right composition self(ct_f(x))."""
-        return CtrFunc(self.r*ct_f.r, self.d+self.r*ct_f.d)
-
     def fixed_point(self):
-        """Compute the point which the contraction function fixes."""
+        """Compute the point which the affine function fixes.
+
+        >>> ctf = AffineFunc(Fraction(2),Fraction(3))
+        >>> ctf.fixed_point()
+        Fraction(-3, 1)
+        >>> ctf(ctf.fixed_point())
+        Fraction(-3, 1)
+
+        The affine factor must have absolute value not equal to 1.
+
+        :return: ``p`` such that ``f(p) == p``.
+        """
         return self.d/(C.n_1-self.r)
 
     def endpoints(self):
+        """Compute the endpoints of the interval ``f([0,1])`` corresponding to the affine function.
+
+        :return: ``(f(0),f(1))``
+        """
         return (self.d,self.d+self.r)
 
-    def interval(self,iv=Interval.closed(C.n_0,C.n_1)):
-        """Compute the interval self(iv) corresponding to the function."""
-        left = self(iv.a)
-        right = self(iv.b)
-        if left <= right:
-            return Interval(a=left,b=right,has_left=iv.has_left,has_right=iv.has_right)
-        else:
-            return Interval(a=right,b=left,has_left=iv.has_right,has_right=iv.has_left)
+    def interval(self,initial_iv=Interval.closed(C.n_0,C.n_1)):
+        """Compute the set image ``f(initial_iv)={f(x):x in initial_iv}`` corresponding to the function.
 
-    def normalize(self, interval):
-        "Normalize with respect to the given interval."
-        cur_iv = self.interval(iv=interval)
-        new_iv = (cur_iv - interval.a)/interval.delta
-        if self.r > C.n_0:
-            return CtrFunc(new_iv.delta, new_iv.a)
+        :param initial_iv: interval to compute image of
+        :return: image of the interval
+        """
+        left = self(initial_iv.a)
+        right = self(initial_iv.b)
+        if left <= right:
+            return Interval(a=left,b=right,has_left=initial_iv.has_left,has_right=initial_iv.has_right)
         else:
-            return CtrFunc(-new_iv.delta, new_iv.b)
+            return Interval(a=right,b=left,has_left=initial_iv.has_right,has_right=initial_iv.has_left)
+
 
     def __call__(self, x):
+        """Use the class as a python function.
+
+        :param x: call value
+        :return: ``f(x)``
+        """
         return self.r*x+self.d
+
+    def inverse(self):
+        """Compute the inverse function of the linear map.
+
+        Requires that :attr:`r` is non-zero.
+
+        :return: a new affine function instance ``g(x)`` such that ``g(f(x)=f(g(x))=x``
+        """
+        return AffineFunc(1/self.r,-self.d/self.r)
+
+    def compose(self, g):
+        """Compute the affine function resulting from right composition with the affine function g.
+
+        :param g: any affine function
+        :return: a new affine function instance ``f(g(x))``
+        """
+        return AffineFunc(self.r*g.r, self.d+self.r*g.d)
+
+
     def __repr__(self):
-        return f"CtrFunc(r={self.r},d={self.d})"
+        """Return string representation of affine function.
+
+
+        :return: string representation
+        """
+        return f"AffineFunc(r={self.r},d={self.d})"
+
     def __str__(self):
+        """Return user-readable string representation of affine function.
+
+        :return: string representation.
+        """
         return f"f:x*({self.r}) + ({self.d})"
 
-def ifs_family(fn):
-    """Decorator to construct families of iterated function systems parametrized by some set of functions.
-    When decorated with @ifs_family, call functions by first specifying probs if necessary, followed by keyword arguments.
+# add proper docstrings for sphinx-autodoc
+AffineFunc.r.__doc__ = """\
+The affine factor.
+"""
+AffineFunc.d.__doc__ = """\
+The translation factor.
+"""
+AffineFunc.__new__.__doc__ = """\
+Creates a new affine function instance representing the function f(x) = :attr:`r` x + :attr:`d`.
+
+Note that the parameters :attr:`r` and :attr:`d` must be hashable numeric types.
+
+:param r: the linear term
+:param d: the constant term
+:return: affine function instance
+"""
+
+
+def ifs_family(ifs_func):
+    """Convenience decorator to construct families of iterated function systems parametrized by some set of values.
+
+    Used to decorate functions of the form
+
+    .. code-block::
+
+       def ifs(probs=def_p, a_1=def_1, ..., a_n=def_n):
+           return [AffineFunc(...), ..., AffineFunc(...)
+
+    where ``a_1,...,a_n`` are arbitrary parameter names, arbitrary default values ``def_1,...,def_n`` for the parameters, and ``def_p`` default argument for probabilities (see :meth:`IFS.set_probs`).
+    The arguments must all be specified as keyword arguments.
+    The decorated function can be called with the same keyword arguments and returns an :class:`IFS` instance from the corresponding probabilities and contraction functions.
+
+    :param ifs_func: the function being decorated
+    :return: decorated function
     """
+    @functools.wraps(ifs_func)
     def wrapper(**kwargs):
-        fn_kwargs = {k:v.default for k,v in inspect.signature(fn).parameters.items()}
+        fn_kwargs = {k:v.default for k,v in inspect.signature(ifs_func).parameters.items()}
         func_params = {**fn_kwargs,**kwargs}
         try:
             probs = func_params['probs']
         except KeyError:
             raise KeyError("Function decorated by 'ifs_family' has no default keyword 'probs'.")
         if probs is None:
-            return IFS.uniform_p(*fn(**func_params))
+            return IFS.uniform_p(*ifs_func(**func_params))
         else:
-            return IFS(fn(**func_params),probs)
+            return IFS(ifs_func(**func_params),probs)
     return wrapper
 
 
 class IFS:
-    # an IFS is essentially a factory for words and ctr funcs
+    """A class representing an iterated function system such that the convex hull of the invariant compact set is [0,1].
+
+    After initialization, the instance is guaranteed to have instance variables
+
+    * :var f: normalized contraction functions sorted first by shift, then by contraction factor
+
+    """
     def __init__(self, funcs, probabilities=None):
-        """funcs is a list of functions"""
+        """Initialize iterated function system instance.
+
+        The `funcs` argument is a finite iterable of AffineFunc instances with linear factor having absolute value strictly between 0 and 1.
+
+        If `probabilities` is specified, it must be a list of real values strictly between 0 and 1 with sum 1, with the same length as `funcs`.
+
+        :param funcs: an iterable of :class:`AffineFunc` instances
+        :param probabilities: an optional list of probabilities
+        """
         # check params
-        assert all(C.n_0<abs(f.r)<C.n_1 for f in funcs), "IFS contraction factors must have 0<|r|<1"
-        assert all(C.n_0<=p for p in probabilities) and sum(probabilities) == C.n_1, "IFS probabilities must be non-negative and sum to 1"
+        funcs = list(funcs)
+        assert all(C.n_0<abs(f.r)<C.n_1 for f in funcs), "IFS affine factors must have 0<|r|<1"
 
         self.syr = SymbolicRing((f"p{i+1}" for i in range(len(funcs))))
         self.p = self.syr.get_symbols() # use symbolic probabilities
 
         if probabilities is not None:
+            probabilities = list(probabilities)
+            assert all(C.n_0<=p for p in probabilities) and sum(probabilities) == C.n_1, "IFS probabilities must be non-negative and sum to 1"
             sorted_f_pairs = sorted(zip(funcs,probabilities),key=lambda x:(x[0].d,x[0].r))
             self.f = tuple(f[0] for f in sorted_f_pairs)
             probs = tuple(f[1] for f in sorted_f_pairs)
             self.set_probs(probs)
+
         else:
             self.f = tuple(sorted(funcs,key=lambda x:(x[0].d,x[0].r)))
 
-        self.r = tuple(f.r for f in self.f)
-        self.d = tuple(f.d for f in self.f)
         self.normalize()
 
     def set_probs(self,probs):
@@ -113,26 +240,34 @@ class IFS:
 
     @classmethod
     def uniform_p(cls, *funcs):
-        return cls(funcs,[Rational(1,len(funcs)) for _ in funcs])
+        return cls(funcs,[Fraction(1,len(funcs)) for _ in funcs])
 
     def normalize(self):
-        cvx_hull = self.convex_hull()
-        self.f = [f.normalize(cvx_hull) for f in self.f]
+        def conv_normalize(aff, interval):
+            cur_iv = aff.interval(initial_iv=interval)
+            new_iv = (cur_iv - interval.a)/interval.delta
+            if aff.r > C.n_0:
+                return AffineFunc(new_iv.delta, new_iv.a)
+            else:
+                return AffineFunc(-new_iv.delta, new_iv.b)
+
+        cvx_hull = self.invariant_convex_hull()
+        self.f = [conv_normalize(f,cvx_hull) for f in self.f]
         self.d = [f.d for f in self.f]
 
-    def convex_hull(self):
+    def invariant_convex_hull(self):
         """Convex Hull computation, as adapted from József Vass' paper, which can be found at https://arxiv.org/abs/1502.03788 Section 3.2."""
         def value(tup):
-            return sum(1 for a in tup if self.r[a] < 0) % 2
+            return sum(1 for a in tup if self.f[a].r < 0) % 2
 
         def ct_from_tuple(tup):
-            "Create the contraction function associated to the tuple argument"
-            f = CtrFunc.id()
+            "Create the affine function associated to the tuple argument"
+            f = AffineFunc.id()
             for letter in tup:
                 f = f.compose(self.f[letter])
             return f
 
-        n=2 if all(r>0 for r in self.r) else 4
+        n=2 if all(f.r>0 for f in self.f) else 4
 
         all_x = ((t for t in itertools.product(range(len(self.f)),repeat=n) if value(t) == 0) for n in range(1,n+1))
         all_b = (itertools.product(range(len(self.f)),repeat=n) for n in range(n-1,-1,-1))
@@ -169,7 +304,7 @@ class NetInterval(Interval):
         return self.nb_set.lmax*self.delta
 
     def normalization_func(self):
-        return CtrFunc(self.delta,self.a)
+        return AffineFunc(self.delta,self.a)
 
     def containing_funcs(self):
         return (self.normalization_func().compose(f) for f in self.nb_set)
@@ -191,10 +326,10 @@ class NetInterval(Interval):
     def __repr__(self):
         return f"NetInterval(left={self.left},right={self.right},alpha={self.alpha},nb_set={self.nb_set})"
 
-class Neighbour(CtrFunc):
+class Neighbour(AffineFunc):
     @classmethod
     def from_f(cls,f,iv):
-        func = CtrFunc(iv.delta,iv.a).inverse().compose(f)
+        func = AffineFunc(iv.delta,iv.a).inverse().compose(f)
         return cls(func.r,func.d)
 
     def to_f(cls, net_iv):
@@ -210,7 +345,7 @@ class Neighbour(CtrFunc):
 
 class NeighbourSet(tuple):
     """
-    A neigbour set is just a sorted tuple of neighbours (contraction functions).
+    A neigbour set is just a sorted tuple of neighbours (affine functions).
     """
     def __new__(cls,nb_itbl):
         self = super().__new__(cls,sorted(set(nb_itbl)))

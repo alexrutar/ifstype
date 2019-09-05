@@ -1,11 +1,6 @@
 from quicktions import Fraction
 
 # -------------------------------------
-# internal Rational class
-# -------------------------------------
-Rational = Fraction
-
-# -------------------------------------
 # constants
 # -------------------------------------
 def constant(f):
@@ -18,13 +13,13 @@ def constant(f):
 class _Const:
     @constant
     def n_base(self):
-        return Rational(2)
+        return Fraction(2)
     @constant
     def n_0(self):
-        return Rational(0)
+        return Fraction(0)
     @constant
     def n_1(self):
-        return Rational(1)
+        return Fraction(1)
 
 Constants = _Const()
 

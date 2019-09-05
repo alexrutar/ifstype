@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 
 from .exact import Constants as C, Interval
-from .ifs import CtrFunc, Neighbour, NeighbourSet, NetInterval, TransitionMatrix
+from .ifs import AffineFunc, Neighbour, NeighbourSet, NetInterval, TransitionMatrix
 from .graph import TransitionGraph
 
 

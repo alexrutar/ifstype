@@ -4,7 +4,7 @@ import itertools
 from sympy import oo
 from bisect import bisect
 
-from .rational import Rational, Constants as C
+from .rational import Fraction, Constants as C
 
 # methods which mutate a list in place
 # union
@@ -282,7 +282,7 @@ class Interval(tuple):
     # -----------------------------------------------
     # inclusion methods
     # -----------------------------------------------
-    def __contains__(self, item: Rational):
+    def __contains__(self, item: Fraction):
         return (not self.is_empty) and self.cmp_left <= (item,False) and self.cmp_right >= (item,True)
     def subset(self, other):
         return self.is_empty or ((not other.is_empty) and self.cmp_left >= other.cmp_left and other.cmp_right >= self.cmp_right)
@@ -319,24 +319,24 @@ class Interval(tuple):
     # math operations
     # -----------------------------------------------
     @check_empty
-    def __mul__(self, cnst: Rational):
+    def __mul__(self, cnst: Fraction):
         if cnst < 0:
             return self._same(self.b * cnst, self.a * cnst)
         else:
             return self._same(self.a * cnst, self.b * cnst)
 
     @check_empty
-    def __truediv__(self,cnst: Rational):
+    def __truediv__(self,cnst: Fraction):
         if cnst < C.n_0:
             return self._same(self.b / cnst, self.a / cnst)
         else:
             return self._same(self.a / cnst, self.b / cnst)
 
     @check_empty
-    def __add__(self,cnst: Rational):
+    def __add__(self,cnst: Fraction):
         return self._same(self.a + cnst, self.b + cnst)
 
     @check_empty
-    def __sub__(self,cnst: Rational):
+    def __sub__(self,cnst: Fraction):
         return self._same(self.a - cnst, self.b - cnst)
 

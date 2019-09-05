@@ -3,14 +3,14 @@ import numpy as np
 from operator import mul
 from functools import reduce
 from collections import defaultdict
+from quicktions import Fraction
 
-from .rational import Rational
 from .algebraic import AlgebraicNumber
 
 # TODO: implement __radd__ etc. and do lookup for rational numbers, to allow scalar multiplication and adding rationals
 def check_eq(fn):
     def wrapper(self, other):
-        if isinstance(other,(AlgebraicNumber,Rational,int)):
+        if isinstance(other,(AlgebraicNumber,Fraction,int)):
             return fn(self, self.ring.from_rational(other))
         elif isinstance(other, SymbolicElement):
             if not self.ring is other.ring:

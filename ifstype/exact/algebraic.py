@@ -3,13 +3,13 @@ import itertools
 import functools
 
 from .polynomial import Poly
-from .rational import Rational, Constants as C
+from .rational import Fraction, Constants as C
 
-# parse the args to convert a Rational argument to AlgebraicNumber, to be used with NumberField
+# parse the args to convert a Fraction argument to AlgebraicNumber, to be used with NumberField
 def check_other(f):
-    "Decorator to verify that algebraic numbers originate from equivalent factories, and convertes Rationals to correct format."
+    "Decorator to verify that algebraic numbers originate from equivalent factories, and convertes Fractions to correct format."
     def valid_num_field(self,other):
-        if isinstance(other,(int,Rational)):
+        if isinstance(other,(int,Fraction)):
             return f(self, self.num_field._from_poly(Poly.cnst(other)))
         elif isinstance(other,AlgebraicNumber) and self.num_field == other.num_field:
             return f(self, other)

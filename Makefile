@@ -1,4 +1,3 @@
-.PHONY: test draw profile
 test:
 	-python3 test.py
 draw: test

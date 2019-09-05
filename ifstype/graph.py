@@ -4,9 +4,10 @@ import typing
 from functools import reduce
 import itertools
 from operator import mul
+from quicktions import Fraction
 
-from .exact import Rational, Interval, Constants as C
-from .ifs import CtrFunc, NetInterval, TransitionMatrix
+from .exact import Interval, Constants as C
+from .ifs import AffineFunc, NetInterval, TransitionMatrix
 
 
 class LocalDim:
@@ -23,8 +24,8 @@ class LocalDim:
 
 class EdgeInfo(typing.NamedTuple):
     """Named tuple to represent the edge information intrinsic to an edge (other than the source and target)"""
-    t_index: Rational
-    length: Rational
+    t_index: Fraction
+    length: Fraction
     transition: TransitionMatrix
 
 class TransitionGraph:

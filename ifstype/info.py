@@ -13,7 +13,7 @@ class GraphWriter:
         self.tr_graph = tr_graph
 
     def variable_info(self):
-        all_nums = itertools.chain((f.r for f in self.tr_graph.ifs.f),(f.d for f in self.tr_graph.ifs.f))
+        all_nums = itertools.chain((f.r for f in self.tr_graph.ifs.funcs),(f.d for f in self.tr_graph.ifs.funcs))
         # pull a number field, if it exists
         num_field = None
         for n in all_nums:
@@ -33,7 +33,7 @@ class GraphWriter:
             else:
                 return str(num)
                 
-        return "- " + "\n- ".join(f"S{i}(x)=x*{as_str(f.r)} + {as_str(f.d)}" for i,f in enumerate(self.tr_graph.ifs.f,1))
+        return "- " + "\n- ".join(f"S{i}(x)=x*{as_str(f.r)} + {as_str(f.d)}" for i,f in enumerate(self.tr_graph.ifs.funcs,1))
 
     def nb_set_info(self):
         return "\n".join(f"{self.tr_graph.get_identifier(nb_set)} : {nb_set}" for nb_set in self.tr_graph.all_nb_sets())

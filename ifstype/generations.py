@@ -25,7 +25,7 @@ class Generations:
         - tr_graph: a TransitionGraph object
         """
         if root is None:
-            root = NetInterval.base()
+            root = NetInterval()
         transition_graph = TransitionGraph(root, self.ifs)
 
         transition_graph.add_nb_set(root.nb_set) # add root vertex
@@ -73,7 +73,7 @@ class Generations:
     def child_intervals(self, new_nbs):
         new_eps = set(itertools.chain.from_iterable(f.endpoints() for f in new_nbs))
         child_endpoints = [C.n_0] + sorted(ep for ep in new_eps if 0 < ep and ep < 1) + [C.n_1]
-        return (Interval.closed(a,b) for a,b in zip(child_endpoints,child_endpoints[1:]))
+        return (Interval(a,b) for a,b in zip(child_endpoints,child_endpoints[1:]))
 
     def nb_children(self, nb_set,with_transition=True):
         """Construct the un-normalized children of the nb_set."""
@@ -81,14 +81,14 @@ class Generations:
         if with_transition:
             # set elements are triples (p, orig_f, ext_f) where p is the probability associated with the function, orig_f is the initial, and ext_f is the extension
             non_max_nbs = set((C.n_1,nb,nb) for nb in nb_set.nonmaximal_nbs()) # non-maximal neighbours, which extend with probability 1
-            new_nbs = set(self.ifs.extend_with_prb(max_nbs)) # extensions of the maximal neighbours, which also tracks the letter by which it was extended
+            new_nbs = set(self.ifs.extend(max_nbs,with_prob=True)) # extensions of the maximal neighbours, which also tracks the letter by which it was extended
 
             # children intervals, with endpoints that come from some new neighbour
             ch_ivls = self.child_intervals(nb[2] for nb in new_nbs)
 
             # transition_triples consist of lookup dictionaries for each child, where the key is the (orig_f, target_f) and the value is the probability of the extension
             # the target_neighbour is computed by normalizing the extension function against the new child interval
-            transition_triples = [(ch_ivl,defaultdict(int,{(orig_f,Neighbour.from_f(ext_f,ch_ivl)):p for p,orig_f,ext_f in non_max_nbs.union(set(f for f in new_nbs if f[2].interval().supset(ch_ivl)))})) for ch_ivl in ch_ivls]
+            transition_triples = [(ch_ivl,defaultdict(int,{(orig_f,Neighbour.from_aff(ext_f,ch_ivl)):p for p,orig_f,ext_f in non_max_nbs.union(set(f for f in new_nbs if f[2].interval().supset(ch_ivl)))})) for ch_ivl in ch_ivls]
             transition_triples = [(ch,triple) for ch,triple in transition_triples if len(triple) > 0]
 
             # get the new neighbour set by reading the target_neighbour in the transition triples

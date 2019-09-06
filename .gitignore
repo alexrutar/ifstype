@@ -15,6 +15,6 @@
 !ifs_examples.py
 
 # and ignore more things
-ifstype/__pycache__
+*/**/__pycache__
 .DS_Store
 *.swp

@@ -10,8 +10,8 @@ from .algebraic import AlgebraicNumber
 # TODO: implement __radd__ etc. and do lookup for rational numbers, to allow scalar multiplication and adding rationals
 def check_eq(fn):
     def wrapper(self, other):
-        if isinstance(other,(AlgebraicNumber,Fraction,int)):
-            return fn(self, self.ring.from_rational(other))
+        if isinstance(other,AlgebraicNumber):
+            return fn(self, self.ring.from_algebraic(other))
         elif isinstance(other, SymbolicElement):
             if not self.ring is other.ring:
                 raise ValueError("Symbolic elements originate from distinct SymbolicRing instances")
@@ -42,7 +42,7 @@ class SymbolicRing:
         new_dct = {_PowerIdx(1 if p in symbs else 0 for p in self.symb_dct.keys()):coef}
         return SymbolicElement(new_dct, self)
 
-    def from_rational(self, rt):
+    def from_algebraic(self, rt):
         new_dct = {_PowerIdx(0 for _ in range(len(self.symb_dct.keys()))):rt}
         return SymbolicElement(new_dct, self)
     
@@ -84,7 +84,7 @@ class SymbolicRing:
         if it < 0 or not isinstance(it,int):
             raise NotImplementedError("Power must be integer >= 0")
         elif it == 0:
-            return self.from_rational(1)
+            return self.from_algebraic(1)
         elif it == 1:
             return self.from_dct(se.coef_dct)
         elif it == 2:

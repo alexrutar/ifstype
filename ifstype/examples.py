@@ -130,20 +130,6 @@ def wft_4(probs=None,a=None):
             AffineFunc(b,a*b),
             AffineFunc(b,1-b)]
 
-@ifs_family
-def wft_5(probs=None,a=None):
-    """Example with loop class at 0 and remainder essential class.
-    When a is maximal, this IFS is in fact finite type and has 3 loop class and essential class size 4"""
-    num_field = NumberField(Poly((-1,1,1)), 0.6180339887498948482045868)
-    r = num_field.alpha()
-    if a is None:
-        a=r
-    assert 0<a <= r
-    b = a/(1+a)
-    return [AffineFunc(a,0),
-            AffineFunc(b,a*b),
-            AffineFunc(b,1-b)]
-
 
 # ---------------------------------------------------------------------------
 # Not Weak Finite Type

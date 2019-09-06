@@ -1,6 +1,7 @@
 import math
 import itertools
 import functools
+import numbers
 
 from .polynomial import Poly
 from .rational import Fraction, Constants as C
@@ -9,7 +10,7 @@ from .rational import Fraction, Constants as C
 def check_other(f):
     "Decorator to verify that algebraic numbers originate from equivalent factories, and convertes Fractions to correct format."
     def valid_num_field(self,other):
-        if isinstance(other,(int,Fraction)):
+        if isinstance(other,numbers.Rational):
             return f(self, self.num_field._from_poly(Poly.cnst(other)))
         elif isinstance(other,AlgebraicNumber) and self.num_field == other.num_field:
             return f(self, other)
@@ -17,7 +18,7 @@ def check_other(f):
             raise ValueError(f"Inequivalent algebraic numbers! Other is a {type(other)}.")
     return valid_num_field
 
-class AlgebraicNumber:
+class AlgebraicNumber(numbers.Real):
     def __init__(self, num_field, poly):
         self.num_field = num_field # pointer to the factory
         self._poly = poly
@@ -120,9 +121,38 @@ class AlgebraicNumber:
     def __pos__(self):
         return self.num_field.pos(self)
 
+    # ---------------------------------
+    # support for other numeric operations
+    # ---------------------------------
     def __float__(self):
         return self.num_field.float(self)
 
+
+    def __floor__(self):
+        return float(self).__floor__()
+    def __ceil__(self):
+        return float(self).__ceil__()
+
+    def __floordiv__(self,other):
+        return float(self).__floordiv__(other)
+    def __rfloordiv__(self,other):
+        return float(self).__rfloordiv__(other)
+
+    def __mod__(self,other):
+        return float(self).__mod__(other)
+    def __rmod__(self,other):
+        return float(self).__rmod__(other)
+
+    def __round__(self, ndigits=None):
+        return float(self).__round__(self, ndigits=ndigits)
+    def __trunc__(self):
+        return float(self).__trunc__()
+
+    def __rpow__(self, base):
+        return float(self).__rpow__(base)
+
+# an algebraic number is a rational
+AlgebraicNumber.register(numbers.Rational)
 
 class NumberField:
     """A class governing the creation of algebraic numbers.

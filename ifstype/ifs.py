@@ -19,12 +19,10 @@ import itertools
 import numpy as np
 import inspect
 import functools
-from quicktions import Fraction
 import typing
 import attr
 
-from .exact import Constants as C, Interval
-from .exact.symbolic import SymbolicRing, SymbolicMatrix, SymbolicElement
+from .exact import Constants as C, Interval, Fraction, SymbolicRing, SymbolicMatrix, SymbolicElement
 
 @attr.s(frozen=True, slots=True)
 class AffineFunc:
@@ -153,9 +151,9 @@ class IFS:
 
         The `funcs` argument is a list of AffineFunc instances with linear factor having absolute value strictly between 0 and 1.
 
-        .. warning:: The ``funcs`` return value of the undecorated function may not be equal to the :attr:`IFS.funcs` attribute of the returned IFS, since `funcs` is normalized to have invariant convex hull [0,1].
+        .. warning:: The ``funcs`` to the :attr:`IFS.funcs` attribute, since `funcs` is normalized to have invariant convex hull [0,1].
 
-        :raises ValueError: if the linear coefficients r do not satisfy 0<|r|<1
+        :raises ValueError: if the linear coefficients r do not have absolute value strictly between 0 and 1
         :param funcs: a sequence of :class:`AffineFunc` instances
         """
         # check params
@@ -177,7 +175,7 @@ class IFS:
     def probs(self) -> typing.Sequence[SymbolicElement]:
         """Tuple of symbolic probabilities `ifstype.exact.SymbolicElement`, one for each associated to each contraction function.
 
-        If probabilities is set with a sequence of real numbers, they must be strictly greater than 0 and sum to one
+        If probabilities is set with a sequence of real numbers, they must be strictly greater than 0 and sum to 1
 
         :setter: Associate numeric values to the probabilities which sum to 1.
         """
@@ -271,7 +269,7 @@ def ifs_family(ifs_func:typing.Callable[..., typing.Sequence[AffineFunc]]) -> ty
     The arguments must all be specified as keyword arguments.
     The decorated function has the same keyword arguments and returns an :class:`IFS` instance from the corresponding probabilities and contraction functions.
 
-        .. warning:: The ``funcs`` return value of the undecorated function may not be equal to the :attr:`IFS.funcs` attribute, since `funcs` is sorted and normalized to have invariant convex hull [0,1].
+    .. warning:: The ``funcs`` return value of the undecorated function may not be equal to the :attr:`IFS.funcs` attribute, since `funcs` is sorted and normalized to have invariant convex hull [0,1].
 
     :param ifs_func: the function being decorated
     :return: decorated function
@@ -287,10 +285,11 @@ def ifs_family(ifs_func:typing.Callable[..., typing.Sequence[AffineFunc]]) -> ty
 
         funcs = ifs_func(**func_params)
 
-        if len(funcs) != len(probs):
-            raise ValueError(f"List of funcs returned by '{ifs_func.__name__}' decorated by 'ifs_family' has different length than keyword 'probs'.")
 
         if probs is not None:
+            if len(funcs) != len(probs):
+                raise ValueError(f"List of funcs returned by '{ifs_func.__name__}' decorated by 'ifs_family' has different length than keyword 'probs'.")
+
             # add probabilities, resorting if necessary
             sorted_f_pairs = sorted(zip(funcs,probs),key=lambda x:(x[0].d,x[0].r))
             funcs = [f[0] for f in sorted_f_pairs]
@@ -322,6 +321,17 @@ class Neighbour(AffineFunc):
     * :attr:`L`
 
     """
+
+    @property
+    def a(self) -> numbers.Real:
+        """The a descriptor of the neighbour."""
+        return self.d
+
+    @property
+    def L(self) -> numbers.Real:
+        """The L descriptor of the neighbour."""
+        return self.r
+
     @classmethod
     def from_aff(cls,aff:AffineFunc,interval:Interval) -> 'Neighbour':
         """Create the neighbour corresponding to `aff` by normalizing against `interval`.
@@ -332,16 +342,6 @@ class Neighbour(AffineFunc):
         """
         func = AffineFunc(interval.delta,interval.a).inverse().compose(aff)
         return cls(func.r,func.d)
-
-    @property
-    def L(self) -> numbers.Real:
-        """The L descriptor of the neighbour."""
-        return self.r
-
-    @property
-    def a(self) -> numbers.Real:
-        """The a descriptor of the neighbour."""
-        return self.d
 
 @attr.s(frozen=True,slots=True)
 class NeighbourSet:

@@ -1,6 +1,4 @@
-from quicktions import Fraction
-
-from .exact import Constants as C, NumberField, Poly
+from .exact import Constants as C, NumberField, Poly, Fraction
 from .ifs import IFS,AffineFunc, ifs_family
 
 

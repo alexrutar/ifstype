@@ -4,9 +4,8 @@ import typing
 from functools import reduce
 import itertools
 from operator import mul
-from quicktions import Fraction
 
-from .exact import Interval, Constants as C
+from .exact import Interval, Constants as C, Fraction
 from .ifs import AffineFunc, NetInterval, TransitionMatrix
 
 

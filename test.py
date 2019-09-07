@@ -1,11 +1,14 @@
 from ifstype.examples import *
-from ifstype import run_ifs, verify_wft
-from quicktions import Fraction
+from ifstype import run_ifs, verify_wft, Generations
+from ifstype.exact import Fraction
+import cProfile
 
 
 if __name__ == "__main__":
-    ifs = wft_3()
-    tr_g = run_ifs(ifs, "output",with_gens=True,scale='wide',edge_labels='index')
+    #  ifs = wft_3()
+    #  gens = Generations(ifs)
+    #  tr_g = run_ifs(ifs, "output",with_gens=True,scale='wide',edge_labels='index')
+    cProfile.run('Generations(wft_3()).compute_graph()',filename='profile/output.pstats')
 
     #  from ifstype.exact.symbolic import *
 

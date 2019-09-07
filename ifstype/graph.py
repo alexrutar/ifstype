@@ -189,7 +189,7 @@ class TransitionGraph:
     # -------------------------------------------------
     # construction methods
     # -------------------------------------------------
-    def add_nb_set(self, nb_set, transition=None, t_index=None, parent=None,length=None):
+    def add_nb_set(self, nb_set, edge_info=None, parent=None):
         if nb_set not in self._vtx_lookup.keys():
             v = self.g.add_vertex()
             self._nb_set_from_vtx[v] = nb_set
@@ -197,10 +197,7 @@ class TransitionGraph:
         if parent in self.all_nb_sets():
             e = self.g.add_edge(self._vtx_lookup[parent],self._vtx_lookup[nb_set])
             self._edge_lookup[self.g.edge_index[e]] = e # register edge by index
-            self._edge_info[e] = EdgeInfo(
-                    t_index=t_index,
-                    transition=transition,
-                    length=length)
+            self._edge_info[e] = edge_info
 
     def _rebuild_lookups(self):
         self._edge_lookup = {self.g.edge_index[e]:e for e in self.g.edges()}

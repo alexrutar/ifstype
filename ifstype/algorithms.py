@@ -42,5 +42,4 @@ def run_ifs(ifs,foldername,with_gens=False,scale='wide',edge_labels='index',dept
 def verify_wft(ifs,depth=1000):
     """Run the ifs, and determine if it is finite type or not."""
     ifs_gen = Generations(ifs)
-    print(depth)
     return ifs_gen.verify_wft(depth=depth)[0]

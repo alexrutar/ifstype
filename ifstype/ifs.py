@@ -1,8 +1,18 @@
-"""
-.. module:: ifs
-   :synopsis: Core functionality for IFS simulation.
+""":mod:`ifstype.ifs`
+=====================
 
-.. moduleauthor:: Alex Rutar <github.com/alexrutar>
+This module contains core classes and methods for use in the simulation of any iterated function system.
+
+Functions and classes defined in this module:
+
+* :class:`AffineFunc`
+* :class:`IFS`
+* :func:`ifs_family`
+* :class:`Neighbour`
+* :class:`NeighbourSet`
+* :class:`NetInterval`
+* :class:`TransitionMatrix`
+
 """
 import numbers
 import itertools
@@ -20,7 +30,7 @@ from .exact.symbolic import SymbolicRing, SymbolicMatrix, SymbolicElement
 class AffineFunc:
     """An AffineFunc is a real-valued affine function ``f(x)=r*x+d``.
 
-    An AffineFunc is an immutable storage class.
+    This class is an immutable storage class.
     When called without arguments, it defaults to the identity function.
 
     Core attributes:
@@ -28,12 +38,10 @@ class AffineFunc:
     * :attr:`AffineFunc.r`
     * :attr:`AffineFunc.d`
 
-    Methods to query attributes:
+    Methods for function properties:
 
-    * :meth:`AffineFunc.endpoints`
     * :meth:`AffineFunc.fixed_point`
     * :meth:`AffineFunc.interval`
-    * :meth:`AffineFunc.sign`
 
     Methods for behaviour as a function:
 
@@ -41,21 +49,9 @@ class AffineFunc:
     * :meth:`AffineFunc.compose`
     * :meth:`AffineFunc.inverse`
 
-    Methods for miscellany:
-
-    * :meth:`AffineFunc.__repr__`
-    * :meth:`AffineFunc.__str__`
-
     """
     r: numbers.Real = attr.ib(default=C.n_1) #: The affine factor
     d: numbers.Real = attr.ib(default=C.n_0) #: The translation factor
-
-    def sign(self) -> bool:
-        """Determine the sign of the affine function.
-
-        :return: True if :attr:`r` is strictly positive, else False
-        """
-        return self.r>0
 
     def fixed_point(self) -> numbers.Real:
         """Compute the point which the affine function fixes.
@@ -68,19 +64,20 @@ class AffineFunc:
 
         The affine factor must have absolute value not equal to 1.
 
+        :raises ValueError: if linear coefficient is equal to 1
         :return: ``p`` such that ``f(p) == p``.
         """
-        return self.d/(C.n_1-self.r)
-
-    def endpoints(self) -> typing.Tuple[numbers.Real,numbers.Real]:
-        """Compute the endpoints of the interval ``f([0,1])`` corresponding to the affine function.
-
-        :return: ``(f(0),f(1))``
-        """
-        return (self.d,self.d+self.r)
+        try:
+            return self.d/(C.n_1-self.r)
+        except ZeroDivisionError:
+            raise ValueError("Linear coefficient must not be equal to 1")
 
     def interval(self,initial_iv=Interval()) -> Interval:
         """Compute the set image ``f(initial_iv)={f(x):x in initial_iv}`` corresponding to the function.
+
+        >>> aff = AffineFunc(-Fraction(1,2),Fraction(3,4))
+        >>> aff.interval()
+        Interval(a=Fraction(1, 4), b=Fraction(3, 4))
 
         :param initial_iv: interval to compute image of
         :return: image of the interval
@@ -96,34 +93,43 @@ class AffineFunc:
     def __call__(self, x:numbers.Real) -> numbers.Real:
         """Use the class as a python function.
 
+        >>> aff = AffineFunc(Fraction(2),Fraction(3))
+        >>> aff(Fraction(1,2))
+        Fraction(4, 1)
+
         :param x: call value
         :return: result of applying function to x
         """
         return self.r*x+self.d
 
-    def inverse(self) -> 'AffineFunc':
-        """Compute the inverse function of the linear map.
-
-        Requires that :attr:`r` is non-zero.
-
-        :return: a new affine function instance ``g(x)`` such that ``g(f(x)=f(g(x))=x``
-        """
-        return self.__class__(1/self.r,-self.d/self.r)
-
     def compose(self, g:'AffineFunc') -> 'AffineFunc':
         """Compute the affine function resulting from right composition with the affine function g.
+
+        >>> aff = AffineFunc(Fraction(2),Fraction(1,3))
+        >>> afg = AffineFunc(Fraction(2),Fraction(3))
+        >>> aff.compose(afg)
+        AffineFunc(r=Fraction(4, 1), d=Fraction(19, 3))
 
         :param g: any affine function
         :return: a new affine function instance ``f(g(x))``
         """
         return self.__class__(self.r*g.r, self.d+self.r*g.d)
 
-    def __str__(self) -> str:
-        """Return user-readable string representation of affine function.
+    def inverse(self) -> 'AffineFunc':
+        """Compute the inverse function of the linear map.
 
-        :return: string representation.
+        Requires that :attr:`r` is non-zero.
+
+        >>> aff = AffineFunc(Fraction(2),Fraction(1,3))
+        AffineFunc(r=Fraction(1, 2), d=Fraction(-1, 6))
+
+        :return: a new affine function instance ``g(x)`` such that ``g(f(x)=f(g(x))=x``
+        :raises ZeroDivisionError: if :attr:`r` is zero
         """
-        return f"f:x*({self.r}) + ({self.d})"
+        try:
+            return self.__class__(1/self.r,-self.d/self.r)
+        except ZeroDivisionError:
+            raise ZeroDivisionError("Cannot compute inverse of affine function with linear coefficient 0")
 
 
 class IFS:
@@ -142,58 +148,49 @@ class IFS:
     * :meth:`invariant_convex_hull`
 
     """
-    def __init__(self, funcs:typing.Sequence[AffineFunc], probabilities:typing.Optional[typing.Sequence[numbers.Real]]=None) -> None:
+    def __init__(self, funcs:typing.Sequence[AffineFunc]) -> None:
         """Initialize iterated function system instance.
 
         The `funcs` argument is a list of AffineFunc instances with linear factor having absolute value strictly between 0 and 1.
-        If `probabilities` is specified, it must be a list of real values strictly between 0 and 1 with sum 1, with the same length as `funcs`.
 
-        .. warning:: The `funcs` argument may not be equal to the :attr:`funcs` attribute, since during initialization `funcs` is sorted and normalized to have invariant convex hull [0,1].
+        .. warning:: The ``funcs`` return value of the undecorated function may not be equal to the :attr:`IFS.funcs` attribute of the returned IFS, since `funcs` is normalized to have invariant convex hull [0,1].
 
+        :raises ValueError: if the linear coefficients r do not satisfy 0<|r|<1
         :param funcs: a sequence of :class:`AffineFunc` instances
-        :param probabilities: an optional list of probabilities
         """
         # check params
-        assert all(C.n_0<abs(f.r)<C.n_1 for f in funcs), "IFS affine factors must have 0<|r|<1"
+        if not all(C.n_0<abs(f.r)<C.n_1 for f in funcs):
+            raise ValueError("funcs linear coefficients r must have 0<|r|<1")
 
         # use symbolic probabilities
-        self.syr = SymbolicRing((f"p{i+1}" for i in range(len(funcs))))
-        self._probs = self.syr.get_symbols()
-
-        if probabilities is not None:
-            # add probabilities, resorting if necessary
-            assert all(C.n_0<=p for p in probabilities) and sum(probabilities) == C.n_1, "IFS probabilities must be non-negative and sum to 1"
-            sorted_f_pairs = sorted(zip(funcs,probabilities),key=lambda x:(x[0].d,x[0].r))
-            self._funcs = tuple(f[0] for f in sorted_f_pairs)
-            self.probs = tuple(f[1] for f in sorted_f_pairs)
-
-        else:
-            self._funcs = tuple(sorted(funcs,key=lambda x:(x[0].d,x[0].r)))
+        self._syr = SymbolicRing((f"p{i+1}" for i in range(len(funcs))))
+        self._funcs = tuple(funcs)
 
         self._normalize()
 
-    @classmethod
-    def uniform_p(cls, funcs:typing.Sequence[AffineFunc]) -> 'IFS':
-        return cls(funcs,[Fraction(1,len(funcs)) for _ in funcs])
-
     @property
     def funcs(self) -> typing.Sequence[AffineFunc]:
-        """Tuple of contraction functions associated to the IFS.
-        """
+        """Tuple of contraction functions associated to the IFS."""
         return self._funcs
 
     @property
     def probs(self) -> typing.Sequence[SymbolicElement]:
         """Tuple of symbolic probabilities `ifstype.exact.SymbolicElement`, one for each associated to each contraction function.
 
+        If probabilities is set with a sequence of real numbers, they must be strictly greater than 0 and sum to one
+
         :setter: Associate numeric values to the probabilities which sum to 1.
         """
-        return self._probs
+        return self._syr.get_symbols()
 
     @probs.setter
     def probs(self, probs: typing.Sequence[numbers.Real]) -> None:
-        assert len(self.funcs) == len(probs), "funcs and probabilities must be the same size"
-        self.syr.set_eval({f"p{i+1}":p for i,p in enumerate(probs)})
+        if all(C.n_0<=p for p in probs) and sum(probs) != C.n_1:
+            raise ValueError("IFS probabilities must be non-negative and sum to 1")
+        if len(self.funcs) != len(probs):
+            raise ValueError("funcs and probabilities must be the same size")
+
+        self._syr.set_eval({f"p{i+1}":p for i,p in enumerate(probs)})
 
     def __str__(self) -> str:
         """Return user-readable string representation of the iterated function system.
@@ -216,7 +213,7 @@ class IFS:
                 return AffineFunc(-new_iv.delta, new_iv.b)
 
         cvx_hull = self.invariant_convex_hull()
-        self._funcs = [conv_normalize(f,cvx_hull) for f in self.funcs]
+        self._funcs = tuple(conv_normalize(f,cvx_hull) for f in self.funcs)
 
     def invariant_convex_hull(self) -> Interval:
         """Compute the convex hull of the invariant set K.
@@ -261,19 +258,20 @@ class IFS:
         else:
             return itertools.chain.from_iterable((ctr_f.compose(f) for f in self.funcs) for ctr_f in aff_iterable)
 
+
 def ifs_family(ifs_func:typing.Callable[..., typing.Sequence[AffineFunc]]) -> typing.Callable[..., IFS]:
     """Convenience decorator to construct families of iterated function systems parametrized by some set of values.
 
-    Used to decorate functions of the form
+    Used to decorate functions of the form::
 
-    .. code-block::
+        def ifs(probs=def_p, a_1=def_1, ..., a_n=def_n):
+            return [AffineFunc(...), ..., AffineFunc(...)]
 
-       def ifs(probs=def_p, a_1=def_1, ..., a_n=def_n):
-           return [AffineFunc(...), ..., AffineFunc(...)]
-
-    where ``a_1,...,a_n`` are arbitrary parameter names, arbitrary default values ``def_1,...,def_n`` for the parameters, and ``def_p`` default argument for probabilities (see :attr:`IFS.probs`).
+    where ``a_1,...,a_n`` are arbitrary parameter names, arbitrary default values ``def_1,...,def_n`` for the parameters, and ``def_p`` default argument for probabilities (see :attr:`.IFS.probs`).
     The arguments must all be specified as keyword arguments.
-    The decorated function can be called with the same keyword arguments and returns an :class:`IFS` instance from the corresponding probabilities and contraction functions.
+    The decorated function has the same keyword arguments and returns an :class:`IFS` instance from the corresponding probabilities and contraction functions.
+
+        .. warning:: The ``funcs`` return value of the undecorated function may not be equal to the :attr:`IFS.funcs` attribute, since `funcs` is sorted and normalized to have invariant convex hull [0,1].
 
     :param ifs_func: the function being decorated
     :return: decorated function
@@ -285,53 +283,141 @@ def ifs_family(ifs_func:typing.Callable[..., typing.Sequence[AffineFunc]]) -> ty
         try:
             probs = func_params['probs']
         except KeyError:
-            raise KeyError("Function decorated by 'ifs_family' has no default keyword 'probs'.")
-        if probs is None:
-            return IFS.uniform_p(ifs_func(**func_params))
-        else:
-            return IFS(ifs_func(**func_params),probs)
-    return wrapper
+            raise ValueError(f"Function '{ifs_func.__name__}' decorated by 'ifs_family' has no default keyword 'probs'.")
 
+        funcs = ifs_func(**func_params)
+
+        if len(funcs) != len(probs):
+            raise ValueError(f"List of funcs returned by '{ifs_func.__name__}' decorated by 'ifs_family' has different length than keyword 'probs'.")
+
+        if probs is not None:
+            # add probabilities, resorting if necessary
+            sorted_f_pairs = sorted(zip(funcs,probs),key=lambda x:(x[0].d,x[0].r))
+            funcs = [f[0] for f in sorted_f_pairs]
+            probs = [f[1] for f in sorted_f_pairs]
+            ifs = IFS(funcs)
+            ifs.probs = probs
+            return ifs
+
+        else:
+            funcs = sorted(funcs,key=lambda x:(x.d,x.r))
+            return IFS(funcs)
+
+    return wrapper
 
 
 @attr.s(frozen=True,slots=True)
 class Neighbour(AffineFunc):
+    """A neighbour is a special type of normalized affine function, used to represent a neighbour of a net interval.
+
+    This class is an immutable storage class.
+
+    Methods for creation:
+
+    * :meth:`from_aff`
+
+    Convenience attributes:
+
+    * :attr:`a`
+    * :attr:`L`
+
+    """
     @classmethod
-    def from_aff(cls,f:AffineFunc,iv:Interval) -> 'Neighbour':
-        func = AffineFunc(iv.delta,iv.a).inverse().compose(f)
+    def from_aff(cls,aff:AffineFunc,interval:Interval) -> 'Neighbour':
+        """Create the neighbour corresponding to `aff` by normalizing against `interval`.
+
+        :param aff: the affine function
+        :param interval: the interval
+        :return: the corresponding neighbour
+        """
+        func = AffineFunc(interval.delta,interval.a).inverse().compose(aff)
         return cls(func.r,func.d)
 
     @property
     def L(self) -> numbers.Real:
+        """The L descriptor of the neighbour."""
         return self.r
 
     @property
     def a(self) -> numbers.Real:
-        return -self.d
+        """The a descriptor of the neighbour."""
+        return self.d
 
-class NeighbourSet(tuple):
+@attr.s(frozen=True,slots=True)
+class NeighbourSet:
+    """A neigbour set represents a set of unique neighbours.
+
+    This class is an immutable storage class.
+
+    Attributes:
+
+    * :attr:`neighbours`
+    * :attr:`lmax`
+
+    Iteration and containment:
+
+    * :meth:`__iter__`
+    * :meth:`__contains__`
+
+    Canonical string representation:
+
+    * :meth:`__str__`
+
+    Convenince methods:
+
+    * :meth:`maximal_nbs`
+    * :meth:`nonmaximal_nbs`
+
     """
-    A neigbour set is just a sorted tuple of neighbours (affine functions).
-    """
-    def __new__(cls,nb_itbl:typing.Iterable[Neighbour]) -> 'NeighbourSet':
-        self = super().__new__(cls,sorted(set(nb_itbl)))
-        self.lmax = max(abs(nb.L) for nb in self)
-        return self
+    neighbours:typing.AbstractSet[Neighbour] = attr.ib(converter=frozenset,default=(Neighbour(),)) #: the set of neighbours
+
+    @property
+    def lmax(self):
+        """The maximum of the absolute value of the affine factor among neighbours."""
+        return max(abs(nb.L) for nb in self)
+
+    def __iter__(self) -> typing.Iterable[Neighbour]:
+        """An iterable returning the neighbours.
+        The neighbours are not iterated in any particular order.
+
+        :return: the neighbour iterable
+        """
+        return iter(self.neighbours)
+
+    def __contains__(self,nb:Neighbour) -> bool:
+        """Check if a neighbour is contained in the neighbour set
+
+        :param nb: the neighbour
+        :return: True if and only if the neighbour is in the neighbour set.
+        """
+        return nb in self.neighbours
 
     def __str__(self) -> str:
-        return ", ".join(f"({nb.d},{nb.L})" for nb in self)
+        """Return a canonical string representation of the neighbour set.
+        Assuming that the string representations for the coefficients of the neighbour functions are unique, the strings for neighbours are the same if and only if the neighbour sets are equal.
 
-    @classmethod
-    def base(cls) -> 'NeighbourSet':
-        return cls((Neighbour(d=0,r=1),))
+        :return: the string representation
+        """
+        return ", ".join(f"({nb.d},{nb.L})" for nb in sorted(self))
 
     def maximal_nbs(self) -> typing.Iterable[Neighbour]:
-        """Compute the neigbours in self.nb_set of maximal size"""
+        """Compute the neigbours in the neighbour set of maximal size.
+
+        See also :meth:`nonmaximal_nbs`.
+
+        :return: an iterable of maximal neighbours
+        """
         return (nb for nb in self if abs(nb.L) == self.lmax)
 
     def nonmaximal_nbs(self) -> typing.Iterable[Neighbour]:
-        """Compute the neigbours in self.nb_set not of maximal size"""
+        """Compute the neigbours in the neighbour set not of maximal size.
+
+        See also :meth:`maximal_nbs`.
+
+        :return: an iterable of neighbours which are not maximal.
+        """
         return (nb for nb in self if abs(nb.L) != self.lmax)
+
 
 @attr.s(frozen=True,slots=True)
 class NetInterval(Interval):
@@ -355,14 +441,9 @@ class NetInterval(Interval):
     * :meth:`normalization_func`
     * :meth:`containing_funcs`
 
-    Methods for distinctive string representation:
-
-    * :meth:`__repr__`
-    * :meth:`__str__`
-
     """
     alpha: numbers.Real = attr.ib(default=C.n_base) #: the generation
-    nb_set: NeighbourSet= attr.ib(default=NeighbourSet.base()) #: the neighbour set
+    nb_set: NeighbourSet= attr.ib(default=NeighbourSet()) #: the neighbour set
 
     @classmethod
     def from_funcs(cls,a:numbers.Real,b:numbers.Real,alpha:numbers.Real,funcs:typing.Iterable[AffineFunc]) -> 'NetInterval':
@@ -396,18 +477,23 @@ class NetInterval(Interval):
         """
         return (self.normalization_func().compose(f) for f in self.nb_set)
 
-    # representation
-    def __str__(self) -> str:
-        return f"NetIv({self.alpha})[{self.a},{self.b}]"
-    def __repr__(self) -> str:
-        return f"NetInterval(left={self.left},right={self.right},alpha={self.alpha},nb_set={self.nb_set})"
 
 class TransitionMatrix(SymbolicMatrix):
-    """TransitionMatrix class to represent the transition matrix associated to an edge in the transition graph.
+    """A transition matrix is a special class used to represent the transition matrix associated to an edge in the transition graph.
     """
     def pos_row(self) -> bool:
+        """Check if the matrix has the positive row property, in other words that each row contains a non-zero entry.
+
+        :return: True if and only if it has the positive row property.
+        """
         return all(any(x!=0 for x in row) for row in self.matrix)
 
     def spectral_radius(self) -> numbers.Real:
+        """Compute the approximate spectral radius of the transition matrix, assuming that probabilities have been set in the corresponding IFS.
+
+        See :attr:`.IFS.probs` for details on how to set probability values.
+
+        :return: real-valued spectral radius
+        """
         return np.abs(np.linalg.eigvals(np.array(self))).max()
 

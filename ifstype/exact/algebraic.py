@@ -2,12 +2,17 @@ import math
 import itertools
 import functools
 import numbers
+from quicktions import Fraction
 
 from .polynomial import Poly
-from .rational import Fraction, Constants as C
+from .rational import Constants as C
 
 # parse the args to convert a Fraction argument to AlgebraicNumber, to be used with NumberField
-def check_other(f):
+def _check_other_an(f):
+    """A decorator to verify that algebraic numbers originate from equivalent factories, and to conver Fractions into an algebraic number of the correct format.
+
+    :param f:
+    """
     "Decorator to verify that algebraic numbers originate from equivalent factories, and convertes Fractions to correct format."
     def valid_num_field(self,other):
         if isinstance(other,numbers.Rational):
@@ -35,7 +40,7 @@ class AlgebraicNumber(numbers.Real):
             symbol = self.num_field.symbol
         base_str = self._poly.with_symbol(symbol,space=space)
         if term:
-            num_terms = len([x for x in self._poly if x != C.n_0])
+            num_terms = len([x for x in self._poly if x != Fraction(0)])
             if num_terms > 1:
                 base_str = f"({base_str})"
         return base_str
@@ -49,62 +54,62 @@ class AlgebraicNumber(numbers.Real):
     # -----------------------------------------
     # comparisons
     # -----------------------------------------
-    @check_other
+    @_check_other_an
     def __lt__(self, other):
         return self.num_field.lt(self,other)
 
-    @check_other
+    @_check_other_an
     def __le__(self, other):
         return self.num_field.le(self,other)
 
-    @check_other
+    @_check_other_an
     def __gt__(self, other):
         return self.num_field.gt(self,other)
 
-    @check_other
+    @_check_other_an
     def __ge__(self, other):
         return self.num_field.ge(self,other)
 
-    @check_other
+    @_check_other_an
     def __eq__(self,other):
         return self.num_field.eq(self,other)
 
-    @check_other
+    @_check_other_an
     def __neq__(self,other):
         return self.num_field.neq(self,other)
     # -----------------------------------------
     # numeric
     # -----------------------------------------
 
-    @check_other
+    @_check_other_an
     def __truediv__(self, other):
         return self.num_field.mul(self,self.num_field.inv(other))
 
-    @check_other
+    @_check_other_an
     def __rtruediv__(self, other):
         return self.num_field.mul(self.num_field.inv(self),other)
 
-    @check_other
+    @_check_other_an
     def __add__(self,other):
         return self.num_field.add(self,other)
 
-    @check_other
+    @_check_other_an
     def __radd__(self,other):
         return self.num_field.add(self,other)
 
-    @check_other
+    @_check_other_an
     def __sub__(self,other):
         return self.num_field.sub(self,other)
 
-    @check_other
+    @_check_other_an
     def __rsub__(self,other):
         return self.num_field.sub(other,self)
 
-    @check_other
+    @_check_other_an
     def __mul__(self,other):
         return self.num_field.mul(self,other)
 
-    @check_other
+    @_check_other_an
     def __rmul__(self,other):
         return self.num_field.mul(self,other)
         
@@ -165,8 +170,11 @@ class NumberField:
     def __init__(self, minpoly, expr_float, symbol='a'):
         self.minpoly = minpoly
         self.expr_float = expr_float
-        self.deg = self.minpoly.deg
         self.symbol = symbol
+
+    @property
+    def deg(self):
+        return self.minpoly.deg
 
     @classmethod
     def from_sympy(cls, sy_expr):

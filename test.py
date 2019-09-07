@@ -1,9 +1,10 @@
 from ifstype.examples import *
 from ifstype import run_ifs, verify_wft
+from quicktions import Fraction
 
 
 if __name__ == "__main__":
-    ifs = wft_3()
+    ifs = wft_3(probs=[Fraction(1,4),Fraction(1,4),Fraction(1,4),Fraction(1,4)])
     tr_g = run_ifs(ifs, "output",with_gens=True,scale='wide',edge_labels='index')
 
     #  from ifstype.exact.symbolic import *

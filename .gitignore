@@ -7,7 +7,7 @@
 !latex/*.pdf
 !Makefile
 !.gitignore
-!README.md
+!README.rst
 
 
 # test

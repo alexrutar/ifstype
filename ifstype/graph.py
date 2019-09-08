@@ -10,7 +10,8 @@ from .ifs import AffineFunc, NetInterval, TransitionMatrix
 
 
 class LocalDim:
-    """Class to represent local dimensions, for easy printing / visualization of what the values are."""
+    """Class to represent local dimensions, for easy printing / visualization of what the values
+    are."""
     def __init__(self, spr, ln):
         self.spr = spr
         self.length = ln

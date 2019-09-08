@@ -23,7 +23,8 @@ def run_ifs(ifs,foldername,with_gens=False,scale='wide',edge_labels='index',dept
     if tr_g.is_wft:
         Pr.write(f"  IFS is weak finite type with {tr_g.g.num_vertices()} neighbour sets.\n")
     else:
-        Pr.write(f"  Computed {tr_g.g.num_vertices()} neighbour sets without terminating; cannot guarantee weak finite type. Re-run with greater depth if desired.\n")
+        Pr.write(f"  Computed {tr_g.g.num_vertices()} neighbour sets without terminating; cannot \
+                guarantee weak finite type. Re-run with greater depth if desired.\n")
     draw = GraphArtist(tr_g)
     write = GraphWriter(tr_g)
 

@@ -7,7 +7,6 @@ from quicktions import Fraction
 
 from .algebraic import AlgebraicNumber
 
-# TODO: implement __radd__ etc. and do lookup for rational numbers, to allow scalar multiplication and adding rationals
 def check_eq(fn):
     def wrapper(self, other):
         if isinstance(other,AlgebraicNumber):
@@ -104,6 +103,7 @@ class SymbolicRing:
         return "*".join(f"{reverse[idx]}{check_val(v)}" for idx,v in enumerate(sig) if v != 0)
     
     def set_eval(self, val_dct):
+        # val_dict is a dict with symbols -> value lookups
         assert all(symb in val_dct.keys() for symb in self.symb_dct.keys()), "Valuation dict must specify values for all variables."
         self.evals = {self.symb_dct[k]:v for k,v in val_dct.items()}
 
@@ -126,12 +126,12 @@ class SymbolicElement:
         return float(self.eval())
 
     def eval(self):
-        "An eval_dct is a dictionary of {symb:val} to substitute into the string"
         return sum(self.ring._eval_term(v, sig) for sig,v in self.coef_dct.items())
 
     @check_eq
     def __eq__(self, other):
         return self.ring.eq(self,other)
+
     @check_eq
     def __neq__(self, other):
         return not self.ring.sq(self,other)

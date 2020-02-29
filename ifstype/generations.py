@@ -8,13 +8,14 @@ dependency relationships.
 Public module attributes:
 
 * :class:`Generations`
+* :class:`LengthFunction`
 
 """
 import itertools
 from collections import defaultdict
 import numpy as np
 from typing import Sequence, Iterable, Optional, Tuple
-import numbers
+from numbers import Real
 
 from .exact import Constants as C, Interval
 
@@ -25,6 +26,37 @@ from .ifs import (
 
 from .graph import TransitionGraph, EdgeInfo
 
+
+class LengthFunction:
+    """Class with existing length functions for general usage.
+
+    Implemented length functions:
+
+    * :meth:`measure`
+    * :meth:`transition`
+
+    Note that each method must take as arguments two parameters, where the
+    first is the net interval forresponding to the child and the second is the
+    neighbour set of the parent.
+    """
+    @staticmethod
+    def measure(nt:NetInterval, nb_set:NeighbourSet) -> Real:
+        """Measure length function.
+
+        :param nt: normalized child
+        :param nb_set: parent neighbour set
+
+        """
+        return nt.delta
+    @staticmethod
+    def transition(nt:NetInterval, nb_set:NeighbourSet) -> Real:
+        """Transition length function.
+
+        :param nt: normalized child
+        :param nb_set: parent neighbour set
+
+        """
+        return nt.delta*nt.nb_set.lmax/nb_set.lmax
 
 class Generations:
     """Compute children relationships and the transition graph based on a fixed
@@ -154,8 +186,8 @@ class Generations:
             self,
             new_nbs: Iterable[Neighbour]
         ) -> Sequence[Interval]:
-        """Compute all possible intervals formed by endpoints below a net
-        interval [0,1] with from an iterable of neighbours `new_nbs`.
+        """Compute all possible normalized intervals formed by endpoints below
+        a net interval [0,1] with from an iterable of neighbours `new_nbs`.
 
         :param new_nbs: an iterable of neighbours
         :return: a list of intervals in ascending order
@@ -173,7 +205,10 @@ class Generations:
 
     def children_with_transition(
             self,
-            nb_set: NeighbourSet
+            nb_set: NeighbourSet,
+            length_func=LengthFunction.transition
+            # TODO: actually implement "length functions", think about proper
+            # arguments
         ) -> Sequence[Tuple[NeighbourSet, EdgeInfo]]:
         """Compute the transition tuple for every child of the given neighbour
         set.
@@ -186,6 +221,8 @@ class Generations:
         analgous method without computing the edge info
 
         :param nb_set: the neighbour set for which to compute transition tuples
+        :param length_func: the length function used to assign a length to each
+                            edge
         :return: ordered sequence of pairs of the child neighbour set and the
                  edge info, one for each child
 
@@ -236,8 +273,9 @@ class Generations:
                         for nb_par in nb_set])
                 for net_iv, (_,lookup) in zip(ch_net_ivs, transition_pairs)]
 
-        return [
-            (nt.nb_set, EdgeInfo(nt.a, nt.delta, tr)) for nt, tr
+        return [(
+            nt.nb_set,
+            EdgeInfo(nt.a, nt.delta, length_func(nt,nb_set), tr)) for nt, tr
             in zip(ch_net_ivs, transitions)]
 
 

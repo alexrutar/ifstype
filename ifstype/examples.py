@@ -16,11 +16,14 @@ def osc_2(probs=None):
             AffineFunc(Fraction(1,3),Fraction(2,3))]
 
 @ifs_family
-def osc_3(probs=None):
+def osc_3(probs=None,a=None):
     # open set condition with overlap
-    return [AffineFunc(Fraction(1,2),0),
-            AffineFunc(Fraction(1,4),Fraction(1,4)),
-            AffineFunc(Fraction(1,4),Fraction(1,4))]
+    if a is None:
+        a = Fraction(1,2)
+    assert a <= Fraction(1,2)
+    return [AffineFunc(a,0),
+            AffineFunc(a*a,a-a*a),
+            AffineFunc(a*a,1-a*a)]
 
 
 # ---------------------------------------------------------------------------
@@ -28,7 +31,6 @@ def osc_3(probs=None):
 # ---------------------------------------------------------------------------
 @ifs_family
 def eft_1(probs=None):
-    # finite type III with algebraic number
     num_field = NumberField(Poly((-1,1,1)), 0.6180339887498948482045868)
     r = num_field.alpha()
     return [AffineFunc(r,Fraction(0)),
@@ -64,6 +66,13 @@ def eft_5(probs=None):
             AffineFunc(r,r*r),
             AffineFunc(r,r)]
 
+@ifs_family
+def eft_6(probs=None):
+    r = Fraction(1,3)
+    return [AffineFunc(r,0),
+            AffineFunc(r,Fraction(2,87)),
+            AffineFunc(r,Fraction(2,3))]
+
 # ---------------------------------------------------------------------------
 # Finite Type
 # ---------------------------------------------------------------------------
@@ -79,6 +88,14 @@ def ft_2(probs=None):
     r = num_field.alpha()
     return [AffineFunc(r,0),
             AffineFunc(-r,1)]
+@ifs_family
+def ft_3(probs=None,a=None):
+    if a is None:
+        a = Fraction(1,3)
+    # open set condition with overlap
+    return [AffineFunc(a,0),
+            AffineFunc(a*a,a-a*a),
+            AffineFunc(a,1-a)]
 # ---------------------------------------------------------------------------
 # Weak Finite Type
 # ---------------------------------------------------------------------------
@@ -103,6 +120,8 @@ def wft_2(probs=None,a=Fraction(1,4),b=Fraction(1,3)):
 @ifs_family
 def wft_3(probs=None,a=None):
     "Example with no return to 0 and single element loop class"
+    # can also remove last function and is non-trivial IFS subset
+    # good example to study relationship with subsets
     num_field = NumberField(Poly((-1,3,2)),0.28077640640441513745535246399) # upper bound on arbitrary params
     r = num_field.alpha()
     if a is None:
@@ -128,18 +147,41 @@ def wft_4(probs=None,a=None):
             AffineFunc(b,a*b),
             AffineFunc(b,1-b)]
 
+
 @ifs_family
-def wft_5(probs=None,a=None):
-    "Example with no return to 0 and single element loop class"
-    num_field = NumberField(Poly((-1,3,2)),0.28077640640441513745535246399) # upper bound on arbitrary params
-    r = num_field.alpha()
+def wft_5(probs=None,a=None,b=None):
     if a is None:
-        a=r
-    assert a <= r
-    b = a/(1+a)
+        a = Fraction(1,3)
+    if b is None:
+        b = Fraction(1,4)
+    assert a+2*b-a*b <= 1
     return [AffineFunc(a,0),
-            AffineFunc(b,a*b),
-            AffineFunc(a,1-Fraction(2)*b)]
+            AffineFunc(b,a*(1-b)),
+            AffineFunc(b,1-b)]
+
+# some new experimental examples
+@ifs_family
+def wft_6(probs=None,a=None,b=None,n=None):
+    if a is None:
+        a = Fraction(1,4)
+    if b is None:
+        b = Fraction(1,3)
+    if n is None:
+        n = 3
+    assert a+b-a*(b**n)+b <= 1
+    return [AffineFunc(a,0),
+            AffineFunc(b**n,a-a*(b**n)),
+            AffineFunc(b,1-b)]
+
+@ifs_family
+def wft_7(probs=None):
+    a = Fraction(1,4)
+    b = Fraction(1,3)
+    n = 50
+    return [AffineFunc(a,0),
+            AffineFunc(b**n,a-a*(b**n)),
+            AffineFunc(a,1-a-b+a*b),
+            AffineFunc(b,1-b)]
 
 
 # ---------------------------------------------------------------------------
@@ -164,3 +206,22 @@ def inf_3(probs=None):
             AffineFunc(Fraction(1,3),Fraction(3,5)),
             AffineFunc(Fraction(1,4),Fraction(4,5))]
 
+@ifs_family
+def inf_4(probs=None):
+    return [AffineFunc(Fraction(1,7),0),
+            AffineFunc(Fraction(1,7),Fraction(2,21)),
+            AffineFunc(Fraction(1,7),Fraction(4,21)),
+            AffineFunc(Fraction(1,7),Fraction(6,7))]
+
+@ifs_family
+def test(probs=None):
+    return [AffineFunc(Fraction(1,3),0),
+            AffineFunc(Fraction(1,4),Fraction(4,5)),
+            AffineFunc(-Fraction(1,2),1)]
+
+@ifs_family
+def test2(probs=None):
+    return [AffineFunc(Fraction(1,3),0),
+            AffineFunc(Fraction(1,4),Fraction(1,5)),
+            AffineFunc(Fraction(3,10),Fraction(1,5)+Fraction(1,4)),
+            AffineFunc(Fraction(1,4),Fraction(3,4))]

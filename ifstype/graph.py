@@ -1,32 +1,212 @@
+""":mod:`ifstype.generations`
+=============================
+
+This module implements the :class:`ifstype.graph.TransitionGraph` class which
+implements the transition graph of an IFS and related computations which depend
+only on the transition graph.
+
+This module also implements some related transition graph classes.
+
+Public module attributes:
+
+* :class:`TransitionGraph`
+* :class:`LocalDim`
+* :class:`EdgeInfo`
+* :class:`SAdjacencyMatrix`
+
+"""
+
 import graph_tool as gt
 import numpy as np
-import typing
+from typing import Tuple, List, NamedTuple
 from functools import reduce
 import itertools
 from operator import mul
+from numbers import Real
 
-from .exact import Interval, Constants as C, Fraction
+from .exact import (
+    Interval, Constants as C, Fraction, Exact,
+    SymbolicRing, SymbolicMatrix, SymbolicElement
+)
+
 from .ifs import AffineFunc, NetInterval, TransitionMatrix
 
 
 class LocalDim:
-    """Class to represent local dimensions, for easy printing / visualization of what the values
-    are."""
-    def __init__(self, spr, ln):
+    """Represent local dimensions for easy printing and visualization of what
+    the values are.
+
+    Special methods:
+
+    * :meth:`__init__`
+    * :meth:`__float__`
+    * :meth:`__str__`
+    """
+    def __init__(self, spr:Real, ln:Real) -> None:
+        """Initialize the local dimension with two parameters.
+
+        :param spr: the spectral radius of the transition matrix of the path
+        :param ln: the length of the path
+        """
         self.spr = spr
         self.length = ln
 
-    def __float__(self):
+    def __float__(self) -> float:
+        """Return the actual float approximation.
+
+        :return: float approximation
+        """
         return float(np.log(float(self.spr))/np.log(float(self.length)))
 
-    def __str__(self):
-        return f"log({self.spr})/log({self.length})"
+    def __str__(self) -> str:
+        """Return a human-readable string representation
 
-class EdgeInfo(typing.NamedTuple):
-    """Named tuple to represent the edge information intrinsic to an edge (other than the source and target)"""
-    t_index: Fraction
-    length: Fraction
+        :return: string representation
+        """
+
+
+class EdgeInfo(NamedTuple):
+    """Represent the information intrinsic to a fixed edge (other than the
+    source and the target.
+    """
+    t_index: Exact
+    measure: Exact
+    length: Exact
     transition: TransitionMatrix
+
+
+class SAdjacencyMatrix(SymbolicMatrix):
+    """Represent s-adjacency matrices, which are symbolic adjacency matrices
+    where the entries are sums of elements of the form r^s, where r is fixed
+    and s can vary.
+
+    The matrix is stored symbolically, but particular numpy.ndarray instances
+    can be generated automatically.
+
+    >>> s_adj = SAdjacencyMatrix([[(1,),(2,3)],[(),(2,)]])
+    >>> print(s_adj)
+    [[1, (2)^s + (3)^s],
+     [0, (2)^s        ]]
+    >>> s_adj.set_s_val(0.5)
+    >>> s_adj.spec_rad()
+    1.4142135623730951
+    >>> s_adj.compute_s_val()
+    (0.99993896484375, 1)
+
+
+    Initialization:
+
+    * :meth:`__init__`
+
+    Methods:
+
+    * :meth:`set_s_val`
+    * :meth:`spec_rad`
+    * :meth:`compute_s_val`
+
+    """
+    def __init__(self, mat_values:List[List[Tuple[Real,...]]]) -> None:
+        """Initialize the s-adjacency matrix. The only parameter
+        :param mat_values: is a double-nested list of tuples. A tuple
+        (r1,...,rn) in position (i,j) represents the entry r1^s + ... + rn^s in
+        position (i,j) of the s-adjacency matrix. Empty tuples are treated as
+        0.
+
+        :param mat_values: the matrix values
+
+        :raises ValueError: if :param mat_values: is not a square matrix
+
+        """
+        n = len(mat_values)
+        if any(len(sub_lst) != n for sub_lst in mat_values):
+            raise ValueError("s-adjacency matrix must be a square matrix")
+
+        # extract all possible values in all tuples that are not 0,1 and create
+        # a symbolic ring on those elements
+        self._vals = {e for lst in mat_values for tup in lst for e in tup
+                if e != 0 and e != 1}
+        self._syr = SymbolicRing(self._symb_lookup(e) for e in self._vals)
+
+        # evaluate the tuples into corresponding SymbolicRing elements
+        new_mat_values_gen = (
+            tuple(sum(self._term_lookup(e) for e in tup) for tup in lst)
+            for lst in mat_values)
+
+        super().__init__(new_mat_values_gen)
+
+    def _symb_lookup(self,e:Real) -> str:
+        """Get the string representation corresponding to a given element.
+
+        :param e: an element which is a term in mat_values
+        :return: the string representation
+
+        """
+        # get the "SymbolicElement" string corresponding to an eval element
+        return f"({e})^s"
+
+    def _term_lookup(self,e:Real) -> SymbolicElement:
+        """Get the SymbolicElement corresponding to a given element.
+
+        :param e: an element which is a term in mat_values
+        :return: the symbolic element
+
+        """
+        if e == 0:
+            return 0
+        elif e == 1:
+            return 1
+        else:
+            return self._syr.term(self._symb_lookup(e))
+
+    def set_s_val(self,s:Real) -> None:
+        """Set the current evaluation value of s to be a fixed real number
+        strictly greater than 0
+
+        :param s: evaluation strictly greater than 0
+
+        :raises ValueError: if s <= 0
+
+        """
+        if not 0 < s:
+            raise ValueError("Invalid s-value not in range 0<s")
+        dct={self._symb_lookup(e):float(e)**s for e in self._vals}
+        self._syr.set_eval(dct)
+
+
+    def spec_rad(self):
+        """Compute the spectral radius at the current fixed s value.
+
+        .. warning:: The s value must have been previously set using
+                     :meth:`set_s_val` before calling this function.
+        """
+        arr = np.array(self)
+        eigs = np.linalg.eigvals(arr)
+        return max(abs(e) for e in eigs)
+
+
+    def compute_s_val(self,tol=10**(-4)):
+        """Compute a value s (within :param tol:) such that the spectral
+        radius of the s-adjacency matrix is 1. If all entries have value
+        between 0 and 1, this value is unique. Returns a lower bound and upper
+        bound on s.
+
+        :param tol: error tolerance
+        :return: pair (lower s, upper s)
+        """
+        s_below = 0
+        s_above = 1
+
+        # binary search
+        while s_above - s_below > tol:
+            s_mp = (s_above + s_below)/2
+            self.set_s_val(s_mp)
+            if self.spec_rad() < 1:
+                s_above = s_mp
+            else:
+                s_below = s_mp
+
+        return (s_below, s_above)
+
 
 class TransitionGraph:
     """
@@ -64,6 +244,7 @@ class TransitionGraph:
 
     def has_pos_row(self):
         "Check if the transition graph has the positive row property; in other words, that ever transition matrix has a positive entry in every row."
+        # TODO: this is wrong / not correct: need to check positive rows along all paths
         return all(e_inf.transition.pos_row() for e_inf in self._edge_info)
 
     def edge_info(self,e,by_label=False):
@@ -89,7 +270,7 @@ class TransitionGraph:
             assert loop[-1].target() == loop[0].source(), f"{loop} start vertex and end vertex are distinct"
 
         mat = reduce(mul,(self._edge_info[e].transition for e in loop))
-        L = reduce(mul, (self._edge_info[e].length for e in loop))
+        L = reduce(mul, (self._edge_info[e].measure for e in loop))
 
         return LocalDim(mat.spectral_radius(),L)
 
@@ -105,7 +286,32 @@ class TransitionGraph:
     
 
     # -------------------------------------------------
-    # functions to compute fixed net intervals, from symbolic representation (a sequence of edges)
+    # compute adjacency matrix and Hausdorff dimensions
+    # -------------------------------------------------
+
+    def adjacency_matrix(self):
+        """Compute the weighted adjacency matrix with respect to the edge
+        length function"""
+        # generate the adjacency matrix of the essential class
+        ess = self.essential_class()
+        vtx_arr = ess.get_vertices()
+        idx_lookup = {vtx:i for i,vtx in enumerate(vtx_arr)}
+        evals = [[() for _ in vtx_arr] for _ in vtx_arr]
+        for e in ess.edges():
+            sr = idx_lookup[int(e.source())]
+            tg = idx_lookup[int(e.target())]
+            evals[sr][tg] = evals[sr][tg]+ (self.edge_info(e).length,)
+
+        return SAdjacencyMatrix(evals)
+
+    def hausdorff_dim(self,tol=10**(-4)):
+        return self.adjacency_matrix().compute_s_val()
+
+
+
+    # -------------------------------------------------
+    # functions to compute fixed net intervals
+    #  from symbolic representation (a sequence of edges)
     # -------------------------------------------------
     def net_ivs_below(self,start=None):
         if start is None:
@@ -121,11 +327,24 @@ class TransitionGraph:
             to_explore = list(itertools.chain.from_iterable(all_children))
         return out
 
+    def net_ivs_below_depth(self,depth,start=None):
+        if start is None:
+            start = self.root
+
+        out = set()
+        to_explore = [start]
+        while(depth>=0):
+            depth -= 1
+            out.update(to_explore)
+            all_children = [self.children(net_iv) for net_iv in to_explore]
+            to_explore = list(itertools.chain.from_iterable(all_children))
+        return out
+
     def _extend_iv_by_edge(self,iv,edge):
         """Given an interval iv, compute the resulting interval after stepping along the edge"""
         return Interval(
                 iv.a+self._edge_info[edge].t_index*iv.delta,
-                iv.a+(self._edge_info[edge].t_index+self._edge_info[edge].length)*iv.delta)
+                iv.a+(self._edge_info[edge].t_index+self._edge_info[edge].measure)*iv.delta)
 
 
     def children(self, net_iv):
@@ -146,7 +365,7 @@ class TransitionGraph:
         iv = reduce(self._extend_iv_by_edge, edge_seq, self.root)
 
         nb_set = self._nb_set_from_vtx[edge_seq[-1].target()]
-        alpha = self._nb_set_from_vtx[edge_seq[-1].source()].lmax*reduce(mul,(self._edge_info[e].length for e in edge_seq[:-1]), self.root.delta)
+        alpha = self._nb_set_from_vtx[edge_seq[-1].source()].lmax*reduce(mul,(self._edge_info[e].measure for e in edge_seq[:-1]), self.root.delta)
         return NetInterval(iv.a,iv.b,alpha,nb_set)
 
 
@@ -219,6 +438,7 @@ class TransitionGraph:
         # rebuild vertex and edge lookup
         self._rebuild_lookups()
 
+        # TODO: write new code
         # new code:
 
         #  temp_g = self.g
@@ -228,6 +448,11 @@ class TransitionGraph:
 
         # just need to prune graph into GraphView
 
+    def remove_non_reduced_nbs(self):
+        # TODO: need to prune rows of transition matrix with no positive entries,
+        # then prune backwards to remove the columns which correpond to those rows, and repeat
+        # so that only reduced neighbours are left
+        pass
     # -------------------------------------------------
     # saving and loading transition graphs
     # -------------------------------------------------

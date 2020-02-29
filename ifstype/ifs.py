@@ -177,6 +177,7 @@ class IFS:
         # use symbolic probabilities
         self._syr = SymbolicRing((f"p{i+1}" for i in range(len(funcs))))
         self._funcs = tuple(funcs)
+        # return list of probabilities in order
         self._probs = self._syr.get_symbols()
 
         self._normalize()
@@ -223,16 +224,9 @@ class IFS:
 
         :return: None
         """
-        def conv_normalize(aff, interval):
-            cur_iv = aff.interval(initial_iv=interval)
-            new_iv = Interval(
-                (cur_iv.a- interval.a)/interval.delta,
-                (cur_iv.b- interval.a)/interval.delta)
-
-            if aff.r > C.n_0:
-                return AffineFunc(new_iv.delta, new_iv.a)
-            else:
-                return AffineFunc(-new_iv.delta, new_iv.b)
+        def conv_normalize(aff,interval):
+            iv_func = AffineFunc(interval.b-interval.a,interval.a)
+            return iv_func.inverse().compose(aff).compose(iv_func)
 
         cvx_hull = self.invariant_convex_hull()
         self._funcs = tuple(conv_normalize(f,cvx_hull) for f in self.funcs)

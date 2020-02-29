@@ -17,7 +17,7 @@ class GraphWriter:
         # pull a number field, if it exists
         num_field = None
         for n in all_nums:
-            if isinstance(n,AlgebraicNumber):
+            if hasattr(n, "num_field"):
                 num_field = n.num_field
 
         if num_field is not None:
@@ -28,7 +28,7 @@ class GraphWriter:
 
     def ifs_info(self):
         def as_str(num):
-            if isinstance(num,AlgebraicNumber):
+            if hasattr(num, "as_str"):
                 return num.as_str(term=True,space=False)
             else:
                 return str(num)
@@ -38,14 +38,36 @@ class GraphWriter:
     def nb_set_info(self):
         return "\n".join(f"{self.tr_graph.get_identifier(nb_set)} : {nb_set}" for nb_set in self.tr_graph.all_nb_sets())
 
+    def sadj_info(self):
+        return f"{self.tr_graph.adjacency_matrix()}"
+
+    def hdim_info(self):
+        hdim = self.tr_graph.hausdorff_dim(tol=10**(-4))
+        return f"Hausdorff dimension ≈ {(hdim[0]+hdim[1])/2:.3f} in range ({hdim[0]:.5f}, {hdim[1]:.5f})"
+        #  return f"{self.tr_graph.adjacency_matrix()}\n\n{self.tr_graph.hausdorff_dim()}"
+
     def edge_info(self, e, by_label=True):
-        return f"{e.source()} -> {e.target()}\nedge index={self.tr_graph.edge_info(e,by_label=by_label).t_index}\nlength={self.tr_graph.edge_info(e).length}\nlabel={self.tr_graph.g.edge_index[e]}\n" + f"{self.tr_graph.edge_info(e).transition}\n"
+        return (
+            f"{e.source()} -> {e.target()}\n" + 
+            f"edge index={self.tr_graph.edge_info(e,by_label=by_label).t_index}\n" + 
+            f"length={self.tr_graph.edge_info(e).measure}\n" +
+            f"length func={self.tr_graph.edge_info(e).length}\n"+
+            f"label={self.tr_graph.g.edge_index[e]}\n" +
+            f"{self.tr_graph.edge_info(e).transition}\n")
 
     def all_edge_info(self):
         return "\n".join(self.edge_info(e, by_label=False) for e in self.tr_graph.g.edges())
 
     def info(self):
-        return "".join(header + ":\n" + content + "\n\n\n"for header, content in [("Variables",self.variable_info()), ("Contraction Functions", self.ifs_info()), ("Neighbour Sets",self.nb_set_info()), ("Edge Information", self.all_edge_info())])
+        return "".join("~~~ " + header + " ~~~\n" + content + "\n\n\n" 
+            for header, content in
+            [
+                ("Variables",self.variable_info()),
+                ("Contraction Functions", self.ifs_info()),
+                ("Hausdorff Dimension",self.hdim_info()),
+                ("Neighbour Sets",self.nb_set_info()),
+                ("s-Adjacency Matrix",self.sadj_info()),
+                ("Edge Information", self.all_edge_info())])
 
     def info_to_file(self,filename):
         # write the neighbour sets
@@ -160,7 +182,11 @@ class GraphArtist:
 
         # set alpha labels and dashed line separators
         for alpha, ht in net_place.items():
-            plt.text(-0.04/self.scale,ht,f"α = {alpha}",ha='left',va='baseline')
+            label = str(alpha) if alpha != 2 else "∞"
+            plt.text(
+                    -0.04/self.scale,
+                    ht,f"α = {str(alpha) if alpha != 2 else '∞'}",
+                    ha='left',va='baseline')
             plt.hlines(ht-0.2,*xdims,ls=':',color=self.colours["base_dark"])
 
         for alpha, level in ivl_draws.items():
@@ -196,8 +222,11 @@ class GraphArtist:
         """Plot a net interval, which includes the vertex identifier label and a different color."""
         self._draw_interval(ht, net_iv, color=self.colours["blue"], mid_label=self._tr_graph.get_identifier(net_iv.nb_set))
 
-    def gens(self, filename,start=None,**kwargs):
-        self.net_intervals(self._tr_graph.net_ivs_below(start=start), filename,**kwargs)
+    def gens(self, filename,start=None,depth=None,**kwargs):
+        if depth is None:
+            self.net_intervals(self._tr_graph.net_ivs_below(start=start), filename,**kwargs)
+        else:
+            self.net_intervals(self._tr_graph.net_ivs_below_depth(depth,start=start), filename,**kwargs)
 
     def graph(self, filename, edge_labels=None):
         """Draw the transition graph as specified by tr_graph (defaults to the internal transition graph).

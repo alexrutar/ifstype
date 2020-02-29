@@ -1,23 +1,33 @@
 from ifstype.examples import *
-from ifstype import run_ifs, verify_wft, Generations
+from ifstype import run_ifs, verify_fnc, Generations, run_ifs_gens
 from ifstype.exact import Fraction
+from ifstype.graph import SAdjacencyMatrix
+import numpy as np
 import cProfile
 
 
+def test_adj_mat():
+    a = Fraction(1,4)
+    b = Fraction(1,3)
+    # TODO: weird issue printing sums with 1... in SymbolicRing
+    tup_arr = [[(a,a),(a,)],[(1,a),(b,)]]
+
+    adj = SAdjacencyMatrix(tup_arr)
+    print(adj)
+    print(adj.compute_s_val())
+    #  print(compute_s_val(arr))
+    #  print(adj)
+
 if __name__ == "__main__":
-    ifs = wft_3()
-    tr_g = run_ifs(ifs, "output",with_gens=True,scale='wide',edge_labels='index')
-    #  cProfile.run('Generations(wft_3()).compute_graph()',filename='profile/output.pstats')
+    #  ifs = wft_5()
+    #  tr_g = run_ifs(ifs, f"fnc_basic",with_gens=True,scale="relative",depth=2000)
 
-    #  from ifstype.exact.symbolic import *
+    #  ifs = wft_3()
+    #  tr_g = run_ifs(ifs, f"fnc_ex",with_gens=True,scale="relative",depth=2000)
 
-
-
-    #  syr = SymbolicRing(("p1","p2","p3"))
-    #  p1,p2,p3 = syr.get_symbols()
-    #  n = p1+p2+p3**2
-    #  syr.set_eval({"p1":Rational(1,2),"p2":Rational(1,10),"p3":Rational(3,4)})
-
-    #  print(0 == p1**2+2*p1*p2+p2**2- (p1+p2)**2)
-
+    #  ifs = eft_5()
+    #  tr_g = run_ifs(ifs, f"equi_ex",with_gens=False,scale="relative",depth=2000)
+    ifs = wft_5()
+    #  tr_g = run
+    tr_g = run_ifs(ifs,"out",scale='wide',with_gens=True,verbose=True,depth=300)
 

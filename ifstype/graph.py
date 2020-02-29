@@ -1,5 +1,5 @@
-""":mod:`ifstype.generations`
-=============================
+""":mod:`ifstype.graph`
+=======================
 
 This module implements the :class:`ifstype.graph.TransitionGraph` class which
 implements the transition graph of an IFS and related computations which depend
@@ -22,7 +22,7 @@ from typing import Tuple, List, NamedTuple
 from functools import reduce
 import itertools
 from operator import mul
-from numbers import Real
+from numbers import Real, Complex
 
 from .exact import (
     Interval, Constants as C, Fraction, Exact,
@@ -107,14 +107,14 @@ class SAdjacencyMatrix(SymbolicMatrix):
     """
     def __init__(self, mat_values:List[List[Tuple[Real,...]]]) -> None:
         """Initialize the s-adjacency matrix. The only parameter
-        :param mat_values: is a double-nested list of tuples. A tuple
+        ``mat_values`` is a double-nested list of tuples. A tuple
         (r1,...,rn) in position (i,j) represents the entry r1^s + ... + rn^s in
         position (i,j) of the s-adjacency matrix. Empty tuples are treated as
         0.
 
         :param mat_values: the matrix values
 
-        :raises ValueError: if :param mat_values: is not a square matrix
+        :raises ValueError: if ``mat_values`` is not a square matrix
 
         """
         n = len(mat_values)
@@ -137,7 +137,7 @@ class SAdjacencyMatrix(SymbolicMatrix):
     def _symb_lookup(self,e:Real) -> str:
         """Get the string representation corresponding to a given element.
 
-        :param e: an element which is a term in mat_values
+        :param e: an element which is a term in ``mat_values``
         :return: the string representation
 
         """
@@ -147,7 +147,7 @@ class SAdjacencyMatrix(SymbolicMatrix):
     def _term_lookup(self,e:Real) -> SymbolicElement:
         """Get the SymbolicElement corresponding to a given element.
 
-        :param e: an element which is a term in mat_values
+        :param e: an element which is a term in ``mat_values``
         :return: the symbolic element
 
         """
@@ -173,18 +173,18 @@ class SAdjacencyMatrix(SymbolicMatrix):
         self._syr.set_eval(dct)
 
 
-    def spec_rad(self):
+    def spec_rad(self) -> Real:
         """Compute the spectral radius at the current fixed s value.
 
-        .. warning:: The s value must have been previously set using
-                     :meth:`set_s_val` before calling this function.
+        .. warning:: The s value must be set using :meth:`set_s_val` before
+                     calling this function.
         """
         arr = np.array(self)
         eigs = np.linalg.eigvals(arr)
         return max(abs(e) for e in eigs)
 
 
-    def compute_s_val(self,tol=10**(-4)):
+    def compute_s_val(self,tol:Real=10**(-4)) -> Real:
         """Compute a value s (within :param tol:) such that the spectral
         radius of the s-adjacency matrix is 1. If all entries have value
         between 0 and 1, this value is unique. Returns a lower bound and upper
@@ -214,7 +214,7 @@ class TransitionGraph:
     """
     def __init__(self,root,ifs):
         # public attributes
-        self.is_wft = False
+        self.is_fnc = False
         self.g = gt.Graph()
         self.root = root # root net interval
         self.ifs = ifs # associated IFS
@@ -381,7 +381,7 @@ class TransitionGraph:
     def components(self):
         """Create a vertex property map `vprop` such that for any v,
         - vprop[v] == -1 if v is an isolated component with no self loop
-        - vprop[v] == 0 if v is in the attractor (essential class if weak finite type)
+        - vprop[v] == 0 if v is in the attractor (essential class if satisfies finite neighbour condition)
         - vprop[b] == n for 1 <= n <= N where N is the number of non-trivial components of the graph.
         """
         components, hist, att = gt.topology.label_components(self.g,attractors=True) # get the components and the attractor

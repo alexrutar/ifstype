@@ -100,7 +100,7 @@ def ft_3(probs=None,a=None):
 # Weak Finite Type
 # ---------------------------------------------------------------------------
 @ifs_family
-def wft_1(probs=None):
+def fnc_1(probs=None):
     "Example with full essential class."
     return [AffineFunc(Fraction(1,3),0),
             AffineFunc(Fraction(1,5),Fraction(4,15)),
@@ -109,7 +109,7 @@ def wft_1(probs=None):
 
 
 @ifs_family
-def wft_2(probs=None,a=Fraction(1,4),b=Fraction(1,3)):
+def fnc_2(probs=None,a=Fraction(1,4),b=Fraction(1,3)):
     "Example with no return to 0"
     assert a+b-a*b <= Fraction(1,2) and 0 < a and 0 < b
     return [AffineFunc(a,0),
@@ -118,7 +118,7 @@ def wft_2(probs=None,a=Fraction(1,4),b=Fraction(1,3)):
             AffineFunc(b,1-b)]
 
 @ifs_family
-def wft_3(probs=None,a=None):
+def fnc_3(probs=None,a=None):
     "Example with no return to 0 and single element loop class"
     # can also remove last function and is non-trivial IFS subset
     # good example to study relationship with subsets
@@ -134,7 +134,7 @@ def wft_3(probs=None,a=None):
             AffineFunc(b,1-b)]
 
 @ifs_family
-def wft_4(probs=None,a=None):
+def fnc_4(probs=None,a=None):
     """Example with loop class at 0 and remainder essential class.
     When a is maximal, this IFS is in fact finite type and has 3 loop class and essential class size 4"""
     num_field = NumberField(Poly((-1,1,1)), 0.6180339887498948482045868)
@@ -149,7 +149,7 @@ def wft_4(probs=None,a=None):
 
 
 @ifs_family
-def wft_5(probs=None,a=None,b=None):
+def fnc_5(probs=None,a=None,b=None):
     if a is None:
         a = Fraction(1,3)
     if b is None:
@@ -161,7 +161,7 @@ def wft_5(probs=None,a=None,b=None):
 
 # some new experimental examples
 @ifs_family
-def wft_6(probs=None,a=None,b=None,n=None):
+def fnc_6(probs=None,a=None,b=None,n=None):
     if a is None:
         a = Fraction(1,4)
     if b is None:
@@ -174,7 +174,7 @@ def wft_6(probs=None,a=None,b=None,n=None):
             AffineFunc(b,1-b)]
 
 @ifs_family
-def wft_7(probs=None):
+def fnc_7(probs=None):
     a = Fraction(1,4)
     b = Fraction(1,3)
     n = 50

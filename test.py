@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     #  ifs = eft_5()
     #  tr_g = run_ifs(ifs, f"equi_ex",with_gens=False,scale="relative",depth=2000)
-    ifs = wft_5()
+    ifs = fnc_5()
     #  tr_g = run
     tr_g = run_ifs(ifs,"out",scale='wide',with_gens=True,verbose=True,depth=300)
 

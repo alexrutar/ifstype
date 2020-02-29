@@ -72,7 +72,7 @@ class Generations:
 
     Methods to determine IFS properties:
 
-    * :meth:`verify_wft`
+    * :meth:`verify_fnc`
 
     Methods to compute children:
 
@@ -102,9 +102,9 @@ class Generations:
         the transition graph may be incomplete.
 
         To verify completeness of thetransition graph, see
-        :attr:`ifstype.Graph.is_wft`
+        :attr:`ifstype.Graph.is_fnc`
 
-        See also :meth:`verify_wft`.
+        See also :meth:`verify_fnc`.
 
         :param depth: the minimum number of net intervals for which children
                       have been computed before stopping.
@@ -140,12 +140,12 @@ class Generations:
 
         # if IFS is weak finite type:
         if len(ch_to_compute) == 0:
-            transition_graph.is_wft = True
+            transition_graph.is_fnc = True
             transition_graph.remove_terminal_vertices()
 
         return transition_graph
 
-    def verify_wft(self, depth:int=2000) -> Tuple[bool,int]:
+    def verify_fnc(self, depth:int=2000) -> Tuple[bool,int]:
         """Attempt to verify if the stored IFS is weak finite type.
 
         This method is a pared down version of :meth:`compute_graph`, where

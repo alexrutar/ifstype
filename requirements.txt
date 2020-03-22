@@ -1,0 +1,6 @@
+matplotlib
+numpy
+quicktions
+attr
+graph_tool
+sphinx>=2.2.0

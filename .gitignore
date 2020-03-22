@@ -9,6 +9,9 @@
 !.gitignore
 !README.rst
 !.readthedocs.yml
+!docs/*.rst
+!docs/Makefile
+!docs/*.py
 
 
 # test

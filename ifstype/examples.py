@@ -97,7 +97,7 @@ def ft_3(probs=None,a=None):
             AffineFunc(a*a,a-a*a),
             AffineFunc(a,1-a)]
 # ---------------------------------------------------------------------------
-# Weak Finite Type
+# Finite Neighbour Condition
 # ---------------------------------------------------------------------------
 @ifs_family
 def fnc_1(probs=None):
@@ -121,7 +121,8 @@ def fnc_2(probs=None,a=Fraction(1,4),b=Fraction(1,3)):
 def fnc_3(probs=None,a=None):
     "Example with no return to 0 and single element loop class"
     # can also remove last function and is non-trivial IFS subset
-    # good example to study relationship with subsets
+    # example where reduced neighbours are not the same as neighbours
+    # also has, at first pass, a neighbour set with 0 children
     num_field = NumberField(Poly((-1,3,2)),0.28077640640441513745535246399) # upper bound on arbitrary params
     r = num_field.alpha()
     if a is None:
@@ -183,9 +184,17 @@ def fnc_7(probs=None):
             AffineFunc(a,1-a-b+a*b),
             AffineFunc(b,1-b)]
 
+@ifs_family
+def fnc_8(probs=None):
+    a = Fraction(1,3)
+    b = Fraction(1,4)
+    return [AffineFunc(a,0),
+            AffineFunc(b,a-a*b),
+            AffineFunc(b,2*b),
+            AffineFunc(b,3*b)]
 
 # ---------------------------------------------------------------------------
-# Not Weak Finite Type
+# Not Finite Neighbour Condition
 # ---------------------------------------------------------------------------
 @ifs_family
 def inf_1(probs=None):

@@ -162,8 +162,10 @@ class IFS:
         The `funcs` argument is a list of AffineFunc instances with linear
         factor having absolute value strictly between 0 and 1.
 
-        .. warning:: The ``funcs`` to the :attr:`IFS.funcs` attribute, since
-                     `funcs` is normalized to have invariant convex hull [0,1].
+        .. warning:: The `funcs` return value of the undecorated function may
+                     not be equal to the :attr:`IFS.funcs` attribute, since
+                     `funcs` is sorted and normalized to have invariant convex
+                     hull [0,1].
 
         :raises ValueError: if the linear coefficients r do not have absolute
                             value strictly between 0 and 1
@@ -277,8 +279,8 @@ class IFS:
             ) -> Union[
                 AbstractSet[Tuple[SymbolicElement,AffineFunc,AffineFunc]],
                 AbstractSet[AffineFunc]]:
-        """Return a generator of extensions of elements of aff_iterable by all
-        possible functions in the IFS.
+        """Return a generator of extensions of elements of `aff_iterable` by
+        all possible functions in the IFS.
 
         Chains the generator where for each function g of aff_iterable and f of
         the instance variable f, we compute g.compose(f).
@@ -324,7 +326,7 @@ def ifs_family(
     :class:`IFS` instance from the corresponding probabilities and contraction
     functions.
 
-    .. warning:: The ``funcs`` return value of the undecorated function may not
+    .. warning:: The `funcs` return value of the undecorated function may not
                  be equal to the :attr:`IFS.funcs` attribute, since `funcs` is
                  sorted and normalized to have invariant convex hull [0,1].
 
@@ -371,10 +373,11 @@ def ifs_family(
     return wrapper
 
 
-@attr.s(frozen=True,slots=True)
+@attr.s(frozen=True,slots=True,order=True)
 class Neighbour(AffineFunc):
     """A neighbour is a special type of normalized affine function, used to
-    represent a neighbour of a net interval.
+    represent a neighbour of a net interval. Neighbours have a fixed order
+    which is used when computing transition matrices.
 
     This class is an immutable storage class.
 
@@ -411,6 +414,7 @@ class Neighbour(AffineFunc):
         func = AffineFunc(interval.delta,interval.a).inverse().compose(aff)
         return cls(func.r,func.d)
 
+
 @attr.s(frozen=True, slots=True)
 class NeighbourSet:
     """A neigbour set represents a set of unique neighbours.
@@ -421,11 +425,13 @@ class NeighbourSet:
 
     * :attr:`neighbours`
     * :attr:`lmax`
+    * :attr:`__len__`
 
     Iteration and containment:
 
     * :meth:`__iter__`
     * :meth:`__contains__`
+    * :meth:`sorted_iter`
 
     Canonical string representation:
 
@@ -435,6 +441,7 @@ class NeighbourSet:
 
     * :meth:`maximal_nbs`
     * :meth:`nonmaximal_nbs`
+    * :meth:`remove_nb`
 
     """
     neighbours: AbstractSet[Neighbour] = attr.ib(
@@ -448,13 +455,27 @@ class NeighbourSet:
         """
         return max(abs(nb.L) for nb in self)
 
+    def __len__(self):
+        """The length of a neighbour set is the number of neighbours in it.
+        """
+        return len(self.neighbours)
+
     def __iter__(self) -> Iterable[Neighbour]:
         """An iterable returning the neighbours.
         The neighbours are not iterated in any particular order.
+        See :meth:`sorted_iter` to get the neighbours in a fixed order.
 
         :return: the neighbour iterable
         """
         return iter(self.neighbours)
+
+    def sorted_iter(self) -> Iterable[Neighbour]:
+        """An iterable returning the neighbours.
+        The neighbours are iterated in a fixed, global order.
+
+        :return: the neighbour iterable
+        """
+        return iter(sorted(self))
 
     def __contains__(self,nb: Neighbour) -> bool:
         """Check if a neighbour is contained in the neighbour set
@@ -492,6 +513,12 @@ class NeighbourSet:
         """
         return (nb for nb in self if abs(nb.L) != self.lmax)
 
+    def remove_nb(self, nb) -> 'NeighbourSet':
+        """Construct a new neighbour set by removing a particular neighbour .
+
+        :return: the new neighbour set
+        """
+        return self.__class__(enb for enb in self if enb != nb)
 
 @attr.s(frozen=True, slots=True)
 class NetInterval(Interval):
@@ -567,7 +594,9 @@ class NetInterval(Interval):
 
 class TransitionMatrix(SymbolicMatrix):
     """A transition matrix is a special class used to represent the transition
-    matrix associated to an edge in the transition graph.
+    matrix associated to an edge in the transition graph. In addition to being
+    a SymbolicMatrix, the transition matrix also remembers the neighbours which
+    correspond to the rows and columns
 
     Methods not inherited from :class:`ifstype.exact.SymbolicMatric`:
 

@@ -18,6 +18,7 @@ Public module attributes:
 
 import graph_tool as gt
 import numpy as np
+from collections import defaultdict
 from typing import Tuple, List, NamedTuple
 from functools import reduce
 import itertools
@@ -74,6 +75,16 @@ class EdgeInfo(NamedTuple):
     length: Exact
     transition: TransitionMatrix
 
+    def new_matrix(self,new_tr_matrix):
+        return self.__class__(self.t_index, self.measure, self.length, new_tr_matrix)
+
+    def __mul__(self,other):
+        return self.__class__(
+                self.t_index + self.measure*other.t_index,
+                self.measure*other.measure,
+                self.length*other.length,
+                self.transition*other.transition)
+
 
 class SAdjacencyMatrix(SymbolicMatrix):
     """Represent s-adjacency matrices, which are symbolic adjacency matrices
@@ -88,7 +99,7 @@ class SAdjacencyMatrix(SymbolicMatrix):
     [[1, (2)^s + (3)^s],
      [0, (2)^s        ]]
     >>> s_adj.set_s_val(0.5)
-    >>> s_adj.spec_rad()
+    >>> s_adj.spectral_radius()
     1.4142135623730951
     >>> s_adj.compute_s_val()
     (0.99993896484375, 1)
@@ -101,7 +112,7 @@ class SAdjacencyMatrix(SymbolicMatrix):
     Methods:
 
     * :meth:`set_s_val`
-    * :meth:`spec_rad`
+    * :meth:`spectral_radius`
     * :meth:`compute_s_val`
 
     """
@@ -173,15 +184,13 @@ class SAdjacencyMatrix(SymbolicMatrix):
         self._syr.set_eval(dct)
 
 
-    def spec_rad(self) -> Real:
+    def spectral_radius(self) -> Real:
         """Compute the spectral radius at the current fixed s value.
 
         .. warning:: The s value must be set using :meth:`set_s_val` before
                      calling this function.
         """
-        arr = np.array(self)
-        eigs = np.linalg.eigvals(arr)
-        return max(abs(e) for e in eigs)
+        return np.abs(np.linalg.eigvals(np.array(self))).max()
 
 
     def compute_s_val(self,tol:Real=10**(-4)) -> Real:
@@ -200,7 +209,7 @@ class SAdjacencyMatrix(SymbolicMatrix):
         while s_above - s_below > tol:
             s_mp = (s_above + s_below)/2
             self.set_s_val(s_mp)
-            if self.spec_rad() < 1:
+            if self.spectral_radius() < 1:
                 s_above = s_mp
             else:
                 s_below = s_mp
@@ -419,10 +428,111 @@ class TransitionGraph:
             self._edge_lookup[self.g.edge_index[e]] = e # register edge by index
             self._edge_info[e] = edge_info
 
+    def _filter_pos_row(self):
+        """Construct a list of (vtx,i,nb) triples where vtx is a vertex and nb
+        is a neighbour such that row i of every outgoing transition matrix is a
+        row of zeros.
+        """
+        non_reduced_list = []
+        #  dct = defaultdict(list)
+        for vtx in self.g.vertices():
+            # list of outgoing transition matrices
+            tr_mats = [self.edge_info(e).transition.matrix for e in vtx.out_edges()]
+            for i,nb in enumerate(self.get_nb_set(vtx).sorted_iter()):
+                # check if there are no offspring in any child
+                if all(x == 0 for mat in tr_mats for x in mat[i]):
+                    non_reduced_list.append((vtx,i,nb))
+        
+        return non_reduced_list
+
+    def _prune_vtx(self,vtx_trip):
+        """Prune the out edges corresponding to vtx_trip, where
+        vtx_trip = (vtx,i,nb) is a triple corresponding to the vertex, the
+        row in the outgoing transition matrices that must be removed, and the
+        neighbour set corresponding to the row.
+
+        This process removes row i from the outgoing transition matrix, removes
+        the neighbour from the neighbour set of vtx, and then removes the
+        column i from all the incoming edges to the vertex set.
+        If that column makes the transition matrix have size 0, the
+        corresponding edge is removed
+
+        """
+        vtx,i,nb = vtx_trip
+
+        # update the neighbour set
+        new_nb_set = self.get_nb_set(vtx).remove_nb(nb)
+        self._nb_set_from_vtx[vtx] = new_nb_set
+
+        # remove the row from the outgoing transition matrices
+        for e in vtx.out_edges():
+            new_mat = self.edge_info(e).transition.remove_row(i)
+            self._edge_info[e] = self.edge_info(e).new_matrix(new_mat)
+
+        # remove the column from the incoming transition matrices
+        # if the matrix becomes empty, delete the edge
+        for e in vtx.in_edges():
+            new_mat = self.edge_info(e).transition.remove_column(i)
+            #  if new_mat.is_empty():
+                #  self.g.remove_edge(e)
+            #  else:
+            self._edge_info[e] = self.edge_info(e).new_matrix(new_mat)
+
+
+    def non_red_nbs(self):
+        #  to_reduce = self._filter_pos_row()
+        #  non_reduced_neighbours = set()
+        #  while(len(to_reduce) > 0):
+            #  for red in to_reduce:
+                #  # add the neighbour to the list of reduced neighbours
+                #  non_reduced_neighbours.add(red[2])
+                #  self._prune_vtx(red)
+            #  for e in self.g.edges():
+                #  if self._edge_info[e].transition.is_empty():
+                    #  self.g.remove_edge(e)
+
+            #  to_reduce = self._filter_pos_row()
+
+        #  return non_reduced_neighbours.union(self._terminal_nb_sets)
+        return set()
+
     def _rebuild_lookups(self):
+        #  reindex the edges in a sane order and rebuild the lookups
+        edges = [(e.source(),e.target(),self._edge_info[e]) for e in self.g.edges()]
+        self.g.clear_edges()
+        self.g.reindex_edges()
+
+        for src,trg,info in edges:
+            new_e = self.g.add_edge(src,trg)
+            self._edge_info[new_e] = info
+
         self._edge_lookup = {self.g.edge_index[e]:e for e in self.g.edges()}
         self._vtx_lookup = {self._nb_set_from_vtx[v]:v for v in self.g.vertices()}
-                
+
+    def _collapse_one(self):
+        for vtx in self.g.vertices():
+            out = list(vtx.out_edges())
+            if len(out) == 1:
+                out_edge = out[0]
+                for in_edge in vtx.in_edges():
+                    new_e = self.g.add_edge(in_edge.source(),out_edge.target())
+                    self._edge_info[new_e] = self._edge_info[in_edge]*self._edge_info[out_edge]
+
+                self.g.remove_vertex(vtx)
+                break
+
+    def collapse(self):
+        n_prev = self.g.num_vertices()
+        n = 0
+        while True:
+            self._collapse_one()
+            n_new = self.g.num_vertices()
+            if n_new == n_prev:
+                break
+            else:
+                n_prev = n_new
+        self._rebuild_lookups()
+
     def remove_terminal_vertices(self):
         """Remove vertices with out degree 0, repair the _vtx_lookup, and return the corresponding list of neighbour sets removed.
         Warning: this changes edge and vertex numbering."""
@@ -430,29 +540,17 @@ class TransitionGraph:
         # use gt.GraphView(self.g,vfilt=zero_degs), should be a get_vertex option for out_degree 0
         # then update zero_degs each time? does this change the GraphView?
         # then can prune directly from the GraphView on the last run?
+        self._terminal_nb_sets = set()
         zero_degs = gt.util.find_vertex(self.g,"out",0)
         while(len(zero_degs) > 0):
+            for vtx in zero_degs:
+                self._terminal_nb_sets.update(self._nb_set_from_vtx[vtx])
             self.g.remove_vertex(zero_degs)
             zero_degs = gt.util.find_vertex(self.g,"out",0)
 
-        # rebuild vertex and edge lookup
         self._rebuild_lookups()
 
-        # TODO: write new code
-        # new code:
 
-        #  temp_g = self.g
-        #  while True:
-            #  zero_deg_filter = (temp_g.get_out_degrees(temp_g.get_vertices()) == 0)
-            #  temp_g = GraphView(temp_g,vfilt=zero_deg_filter)
-
-        # just need to prune graph into GraphView
-
-    def remove_non_reduced_nbs(self):
-        # TODO: need to prune rows of transition matrix with no positive entries,
-        # then prune backwards to remove the columns which correpond to those rows, and repeat
-        # so that only reduced neighbours are left
-        pass
     # -------------------------------------------------
     # saving and loading transition graphs
     # -------------------------------------------------

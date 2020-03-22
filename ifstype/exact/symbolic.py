@@ -176,9 +176,22 @@ class SymbolicMatrix:
     def __init__(self, double_list):
         self.matrix = tuple(tuple(sublist) for sublist in double_list)
         self.xdim = len(self.matrix)
-        self.ydim = len(self.matrix[0])
+        if self.xdim == 0:
+            self._init_empty()
+        else:
+            self.ydim = len(self.matrix[0])
+            if self.ydim == 0:
+                self._init_empty()
         if not all(len(self.matrix[i]) == self.ydim for i in range(self.xdim)):
             raise ValueError("Invalid argument dimensions")
+
+    def _init_empty(self):
+        self.xdim = 0
+        self.ydim = 0
+        self.matrix = tuple()
+    
+    def is_empty(self):
+        return self.matrix == tuple()
 
     @classmethod
     def identity(cls,n):
@@ -186,6 +199,16 @@ class SymbolicMatrix:
         for i in range(n):
             dbl_list[i][i] = 1
         return cls(dbl_list)
+
+    #  def is_identity(self):
+        #  idt = SymbolicMatrix.identity(self.xdim)
+        #  return self == idt
+
+    def remove_row(self, idx):
+        return self.__class__(sublist for i,sublist in enumerate(self.matrix) if i != idx)
+
+    def remove_column(self, idx):
+        return self.__class__((entry for i,entry in enumerate(sublist) if i != idx) for sublist in self.matrix)
 
     def __array__(self):
         return np.array(self.matrix, dtype=float)
@@ -227,7 +250,7 @@ class SymbolicMatrix:
             return self**(-(-it // 2)) * self**(it // 2)
 
     def __str__(self):
-        max_w = [max(len(str(sublist[i])) for sublist in self.matrix) for i in range(len(self.matrix[0]))]
+        max_w = [max(len(str(sublist[i])) for sublist in self.matrix) for i in range(self.ydim)]
         return "[" + ",\n ".join("["+', '.join(f"{str(item):{max_w[i]}}" for i,item in enumerate(sublist))+"]" for sublist in self.matrix) + "]"
 
     #  def as_latex(self):

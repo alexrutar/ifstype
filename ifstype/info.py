@@ -70,6 +70,7 @@ class GraphWriter:
                 ("Edge Information", self.all_edge_info())])
 
     def info_to_file(self,filename):
+        # TODO: make this consistent with the graph draw? ...
         # write the neighbour sets
         with open(filename,'w') as outfile:
             outfile.write(self.info())
@@ -236,6 +237,8 @@ class GraphArtist:
         - red: vertices that are in the essential class, or if the transition graph is incomplete, the vertices which have out degree 0
         - other colours: the loop classes
         """
+        #  if not (filename.endswith(".pdf") or filename.endswith(".png") or filename.endswith(".jpg")):
+            #  filename = filename + ".pdf"
         graph = self._tr_graph.g
         comps = self._tr_graph.components() # labels for the connected components
         pos = gt.draw.sfdp_layout(graph) # graph vertex and edge positioning

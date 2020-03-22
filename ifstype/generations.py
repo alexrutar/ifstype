@@ -93,7 +93,8 @@ class Generations:
     def compute_graph(
             self,
             depth: int=2000,
-            root: Optional[NetInterval]=None
+            root: Optional[NetInterval]=None,
+            non_red_nbs: Optional[set] = None
         ) -> TransitionGraph:
         """Compute the transition graph based on the stored IFS.
 
@@ -110,6 +111,9 @@ class Generations:
                       have been computed before stopping.
         :param root: the root net interval from which the transition graph
                      should be computed.
+        :param non_red_nbs: a (previously computed) set of reduced
+                                   neighbours from which the neighbours
+                                   most be drawn
         :return: the transition graph
 
         """
@@ -125,7 +129,10 @@ class Generations:
             all_children_params = list(itertools.chain.from_iterable(
                 [
                     ch + (nb_set,) for ch
-                    in self.children_with_transition(nb_set)] for nb_set
+                    in self.children_with_transition(
+                        nb_set,
+                        non_red_nbs=non_red_nbs)]
+                    for nb_set
                 in ch_to_compute
                 if nb_set not in computed_children))
 
@@ -141,12 +148,16 @@ class Generations:
         # if IFS is weak finite type:
         if len(ch_to_compute) == 0:
             transition_graph.is_fnc = True
-            transition_graph.remove_terminal_vertices()
+            if non_red_nbs is not None:
+                transition_graph.collapse()
+            else:
+                transition_graph.remove_terminal_vertices()
 
         return transition_graph
 
     def verify_fnc(self, depth:int=2000) -> Tuple[bool,int]:
-        """Attempt to verify if the stored IFS is weak finite type.
+        """Attempt to verify if the stored IFS satisfies the finite neighbour
+        condition.
 
         This method is a pared down version of :meth:`compute_graph`, where
         only the graph dependency structure is computed (without creating the
@@ -156,8 +167,9 @@ class Generations:
 
         See also :meth:`compute_graph`.
 
-        * If ``bool`` is true, then the IFS is weak finite type with at most
-          ``computed`` distinct neighbour sets (there may be fewer).
+        * If ``bool`` is true, then the IFS satisfies the finite neighbour
+          condition with at most ``computed`` distinct neighbour sets
+          (there may be fewer).
         * If ``bool`` is false, then the IFS may or may not be weak finite
           type, but there are at least ``computed`` distinct neighbour sets.
 
@@ -206,6 +218,7 @@ class Generations:
     def children_with_transition(
             self,
             nb_set: NeighbourSet,
+            non_red_nbs=None,
             length_func=LengthFunction.transition
             # TODO: actually implement "length functions", think about proper
             # arguments
@@ -253,6 +266,16 @@ class Generations:
                         if f[2].interval().supset(ch_ivl)))}))
             for ch_ivl in ch_ivls]
 
+        # remove neighbours which are not reduced
+        if non_red_nbs is not None:
+            transition_pairs = [
+                (ch, defaultdict(
+                    int,
+                    {k:p for k,p in lookup.items()
+                        if k[1] not in non_red_nbs}))
+                for ch,lookup in transition_pairs]
+
+        # remove net intervals with no neighbours
         transition_pairs = [
             (ch,lookup) for ch,lookup
             in transition_pairs
@@ -269,14 +292,15 @@ class Generations:
         transitions = [
                 TransitionMatrix(
                     [
-                        [lookup[(nb_par,nb_ch)] for nb_ch in net_iv.nb_set]
-                        for nb_par in nb_set])
+                        [lookup[(nb_par,nb_ch)] for nb_ch
+                            in net_iv.nb_set.sorted_iter()]
+                        for nb_par in nb_set.sorted_iter()])
                 for net_iv, (_,lookup) in zip(ch_net_ivs, transition_pairs)]
 
         return [(
-            nt.nb_set,
-            EdgeInfo(nt.a, nt.delta, length_func(nt,nb_set), tr)) for nt, tr
-            in zip(ch_net_ivs, transitions)]
+                nt.nb_set,
+                EdgeInfo(nt.a, nt.delta, length_func(nt,nb_set), tr))
+            for nt, tr in zip(ch_net_ivs, transitions)]
 
 
     def children(self, nb_set:NeighbourSet) -> Sequence[NeighbourSet]:

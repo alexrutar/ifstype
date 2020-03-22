@@ -12,5 +12,5 @@
 
    .. automethod:: __init__
    .. automethod:: set_s_val
-   .. automethod:: spec_rad
+   .. automethod:: spectral_radius
    .. automethod:: compute_s_val

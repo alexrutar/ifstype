@@ -1,0 +1,4 @@
+version: 1
+formats: all
+sphinx:
+    configuration: docs/conf.py

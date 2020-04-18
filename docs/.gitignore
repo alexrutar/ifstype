@@ -1,0 +1,6 @@
+!html/**/*
+!*.rst
+!*.py
+!Makefile
+!make.bat
+!build/html/**/*

@@ -30,7 +30,7 @@ from .exact import (
     SymbolicRing, SymbolicMatrix, SymbolicElement
 )
 
-from .ifs import AffineFunc, NetInterval, TransitionMatrix
+from .ifs import AffineFunc, NetInterval, TransitionMatrix, NeighbourSet
 
 
 class LocalDim:
@@ -64,6 +64,7 @@ class LocalDim:
 
         :return: string representation
         """
+        return f"log {self.spr} / log {self.length}"
 
 
 class EdgeInfo(NamedTuple):
@@ -236,6 +237,9 @@ class TransitionGraph:
         self._vtx_lookup = {} # correspondence of neighbour set objects to vertices
         self._edge_lookup = {} # correspondence of edge indices to edge descriptors
 
+    def root_vtx(self):
+        return self._vtx_lookup[NeighbourSet()]
+
     def all_nb_sets(self):
         "Iterable for all neighbour sets, which also allows inclusion checking."
         return self._vtx_lookup.keys()
@@ -267,6 +271,9 @@ class TransitionGraph:
     # -------------------------------------------------
     # compute local dimensions
     # -------------------------------------------------
+    def transition_matrix(self, path, by_label=False):
+        return reduce(mul,(self._edge_info[e].transition for e in path))
+
     def _is_valid_path(self, path, by_label=False):
         """Check if a sequences if edges is in fact a valid path."""
         return all(e1.target() == e2.source() for e1,e2 in zip(path,path[1:]))
@@ -291,7 +298,7 @@ class TransitionGraph:
     
     def essential_local_dims(self,search_depth=1):
         ldims = [self.vertex_local_dims(vtx,search_depth=search_depth) for vtx in self.essential_class().get_vertices()]
-        return Interval.closed(min(l[0] for l in ldims), max(l[-1] for l in ldims))
+        return Interval(min(l[0] for l in ldims), max(l[-1] for l in ldims))
     
 
     # -------------------------------------------------

@@ -1,0 +1,673 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ifstype.graph &#8212; IfsType  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ifstype.graph</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;:mod:`ifstype.graph`</span>
+<span class="sd">=======================</span>
+
+<span class="sd">This module implements the :class:`ifstype.graph.TransitionGraph` class which</span>
+<span class="sd">implements the transition graph of an IFS and related computations which depend</span>
+<span class="sd">only on the transition graph.</span>
+
+<span class="sd">This module also implements some related transition graph classes.</span>
+
+<span class="sd">Public module attributes:</span>
+
+<span class="sd">* :class:`TransitionGraph`</span>
+<span class="sd">* :class:`LocalDim`</span>
+<span class="sd">* :class:`EdgeInfo`</span>
+<span class="sd">* :class:`SAdjacencyMatrix`</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">graph_tool</span> <span class="k">as</span> <span class="nn">gt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">mul</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="k">import</span> <span class="n">Real</span><span class="p">,</span> <span class="n">Complex</span>
+
+<span class="kn">from</span> <span class="nn">.exact</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">Interval</span><span class="p">,</span> <span class="n">Constants</span> <span class="k">as</span> <span class="n">C</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">,</span> <span class="n">Exact</span><span class="p">,</span>
+    <span class="n">SymbolicRing</span><span class="p">,</span> <span class="n">SymbolicMatrix</span><span class="p">,</span> <span class="n">SymbolicElement</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.ifs</span> <span class="k">import</span> <span class="n">AffineFunc</span><span class="p">,</span> <span class="n">NetInterval</span><span class="p">,</span> <span class="n">TransitionMatrix</span><span class="p">,</span> <span class="n">NeighbourSet</span>
+
+
+<div class="viewcode-block" id="LocalDim"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.LocalDim">[docs]</a><span class="k">class</span> <span class="nc">LocalDim</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Represent local dimensions for easy printing and visualization of what</span>
+<span class="sd">    the values are.</span>
+
+<span class="sd">    Special methods:</span>
+
+<span class="sd">    * :meth:`__init__`</span>
+<span class="sd">    * :meth:`__float__`</span>
+<span class="sd">    * :meth:`__str__`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="LocalDim.__init__"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.LocalDim.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spr</span><span class="p">:</span><span class="n">Real</span><span class="p">,</span> <span class="n">ln</span><span class="p">:</span><span class="n">Real</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the local dimension with two parameters.</span>
+
+<span class="sd">        :param spr: the spectral radius of the transition matrix of the path</span>
+<span class="sd">        :param ln: the length of the path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spr</span> <span class="o">=</span> <span class="n">spr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">ln</span></div>
+
+<div class="viewcode-block" id="LocalDim.__float__"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.LocalDim.__float__">[docs]</a>    <span class="k">def</span> <span class="nf">__float__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the actual float approximation.</span>
+
+<span class="sd">        :return: float approximation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spr</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="LocalDim.__str__"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.LocalDim.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return a human-readable string representation</span>
+
+<span class="sd">        :return: string representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;log </span><span class="si">{self.spr}</span><span class="s2"> / log </span><span class="si">{self.length}</span><span class="s2">&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="EdgeInfo"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.EdgeInfo">[docs]</a><span class="k">class</span> <span class="nc">EdgeInfo</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represent the information intrinsic to a fixed edge (other than the</span>
+<span class="sd">    source and the target.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t_index</span><span class="p">:</span> <span class="n">Exact</span>
+    <span class="n">measure</span><span class="p">:</span> <span class="n">Exact</span>
+    <span class="n">length</span><span class="p">:</span> <span class="n">Exact</span>
+    <span class="n">transition</span><span class="p">:</span> <span class="n">TransitionMatrix</span>
+
+    <span class="k">def</span> <span class="nf">new_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">new_tr_matrix</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="n">new_tr_matrix</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">t_index</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="o">*</span><span class="n">other</span><span class="o">.</span><span class="n">t_index</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">measure</span><span class="o">*</span><span class="n">other</span><span class="o">.</span><span class="n">measure</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="o">*</span><span class="n">other</span><span class="o">.</span><span class="n">length</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transition</span><span class="o">*</span><span class="n">other</span><span class="o">.</span><span class="n">transition</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SAdjacencyMatrix"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.SAdjacencyMatrix">[docs]</a><span class="k">class</span> <span class="nc">SAdjacencyMatrix</span><span class="p">(</span><span class="n">SymbolicMatrix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represent s-adjacency matrices, which are symbolic adjacency matrices</span>
+<span class="sd">    where the entries are sums of elements of the form r^s, where r is fixed</span>
+<span class="sd">    and s can vary.</span>
+
+<span class="sd">    The matrix is stored symbolically, but particular numpy.ndarray instances</span>
+<span class="sd">    can be generated automatically.</span>
+
+<span class="sd">    &gt;&gt;&gt; s_adj = SAdjacencyMatrix([[(1,),(2,3)],[(),(2,)]])</span>
+<span class="sd">    &gt;&gt;&gt; print(s_adj)</span>
+<span class="sd">    [[1, (2)^s + (3)^s],</span>
+<span class="sd">     [0, (2)^s        ]]</span>
+<span class="sd">    &gt;&gt;&gt; s_adj.set_s_val(0.5)</span>
+<span class="sd">    &gt;&gt;&gt; s_adj.spectral_radius()</span>
+<span class="sd">    1.4142135623730951</span>
+<span class="sd">    &gt;&gt;&gt; s_adj.compute_s_val()</span>
+<span class="sd">    (0.99993896484375, 1)</span>
+
+
+<span class="sd">    Initialization:</span>
+
+<span class="sd">    * :meth:`__init__`</span>
+
+<span class="sd">    Methods:</span>
+
+<span class="sd">    * :meth:`set_s_val`</span>
+<span class="sd">    * :meth:`spectral_radius`</span>
+<span class="sd">    * :meth:`compute_s_val`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="SAdjacencyMatrix.__init__"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.SAdjacencyMatrix.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat_values</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Real</span><span class="p">,</span><span class="o">...</span><span class="p">]]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the s-adjacency matrix. The only parameter</span>
+<span class="sd">        ``mat_values`` is a double-nested list of tuples. A tuple</span>
+<span class="sd">        (r1,...,rn) in position (i,j) represents the entry r1^s + ... + rn^s in</span>
+<span class="sd">        position (i,j) of the s-adjacency matrix. Empty tuples are treated as</span>
+<span class="sd">        0.</span>
+
+<span class="sd">        :param mat_values: the matrix values</span>
+
+<span class="sd">        :raises ValueError: if ``mat_values`` is not a square matrix</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mat_values</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub_lst</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n</span> <span class="k">for</span> <span class="n">sub_lst</span> <span class="ow">in</span> <span class="n">mat_values</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;s-adjacency matrix must be a square matrix&quot;</span><span class="p">)</span>
+
+        <span class="c1"># extract all possible values in all tuples that are not 0,1 and create</span>
+        <span class="c1"># a symbolic ring on those elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span> <span class="o">=</span> <span class="p">{</span><span class="n">e</span> <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">mat_values</span> <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">lst</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">tup</span>
+                <span class="k">if</span> <span class="n">e</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">e</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_syr</span> <span class="o">=</span> <span class="n">SymbolicRing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_lookup</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">)</span>
+
+        <span class="c1"># evaluate the tuples into corresponding SymbolicRing elements</span>
+        <span class="n">new_mat_values_gen</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_term_lookup</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">tup</span><span class="p">)</span> <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">mat_values</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">new_mat_values_gen</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_symb_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">e</span><span class="p">:</span><span class="n">Real</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get the string representation corresponding to a given element.</span>
+
+<span class="sd">        :param e: an element which is a term in ``mat_values``</span>
+<span class="sd">        :return: the string representation</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the &quot;SymbolicElement&quot; string corresponding to an eval element</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;(</span><span class="si">{e}</span><span class="s2">)^s&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_term_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">e</span><span class="p">:</span><span class="n">Real</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SymbolicElement</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get the SymbolicElement corresponding to a given element.</span>
+
+<span class="sd">        :param e: an element which is a term in ``mat_values``</span>
+<span class="sd">        :return: the symbolic element</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">e</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">e</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_syr</span><span class="o">.</span><span class="n">term</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_lookup</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+<div class="viewcode-block" id="SAdjacencyMatrix.set_s_val"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.SAdjacencyMatrix.set_s_val">[docs]</a>    <span class="k">def</span> <span class="nf">set_s_val</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">s</span><span class="p">:</span><span class="n">Real</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Set the current evaluation value of s to be a fixed real number</span>
+<span class="sd">        strictly greater than 0</span>
+
+<span class="sd">        :param s: evaluation strictly greater than 0</span>
+
+<span class="sd">        :raises ValueError: if s &lt;= 0</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">s</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid s-value not in range 0&lt;s&quot;</span><span class="p">)</span>
+        <span class="n">dct</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_symb_lookup</span><span class="p">(</span><span class="n">e</span><span class="p">):</span><span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">**</span><span class="n">s</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_syr</span><span class="o">.</span><span class="n">set_eval</span><span class="p">(</span><span class="n">dct</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SAdjacencyMatrix.spectral_radius"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.SAdjacencyMatrix.spectral_radius">[docs]</a>    <span class="k">def</span> <span class="nf">spectral_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the spectral radius at the current fixed s value.</span>
+
+<span class="sd">        .. warning:: The s value must be set using :meth:`set_s_val` before</span>
+<span class="sd">                     calling this function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SAdjacencyMatrix.compute_s_val"><a class="viewcode-back" href="../../graph_docs.html#ifstype.graph.SAdjacencyMatrix.compute_s_val">[docs]</a>    <span class="k">def</span> <span class="nf">compute_s_val</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">tol</span><span class="p">:</span><span class="n">Real</span><span class="o">=</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute a value s (within :param tol:) such that the spectral</span>
+<span class="sd">        radius of the s-adjacency matrix is 1. If all entries have value</span>
+<span class="sd">        between 0 and 1, this value is unique. Returns a lower bound and upper</span>
+<span class="sd">        bound on s.</span>
+
+<span class="sd">        :param tol: error tolerance</span>
+<span class="sd">        :return: pair (lower s, upper s)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">s_below</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">s_above</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># binary search</span>
+        <span class="k">while</span> <span class="n">s_above</span> <span class="o">-</span> <span class="n">s_below</span> <span class="o">&gt;</span> <span class="n">tol</span><span class="p">:</span>
+            <span class="n">s_mp</span> <span class="o">=</span> <span class="p">(</span><span class="n">s_above</span> <span class="o">+</span> <span class="n">s_below</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_s_val</span><span class="p">(</span><span class="n">s_mp</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_radius</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">s_above</span> <span class="o">=</span> <span class="n">s_mp</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s_below</span> <span class="o">=</span> <span class="n">s_mp</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">s_below</span><span class="p">,</span> <span class="n">s_above</span><span class="p">)</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">TransitionGraph</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Guarantees: vertex 0 is the root.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">root</span><span class="p">,</span><span class="n">ifs</span><span class="p">):</span>
+        <span class="c1"># public attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_fnc</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span> <span class="c1"># root net interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifs</span> <span class="o">=</span> <span class="n">ifs</span> <span class="c1"># associated IFS</span>
+
+        <span class="c1"># graph properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">new_edge_property</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">new_vertex_property</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span> <span class="c1"># correspondence of vertex objects to neighbour sets</span>
+
+        <span class="c1"># additional associations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># correspondence of neighbour set objects to vertices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edge_lookup</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># correspondence of edge indices to edge descriptors</span>
+
+    <span class="k">def</span> <span class="nf">root_vtx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="p">[</span><span class="n">NeighbourSet</span><span class="p">()]</span>
+
+    <span class="k">def</span> <span class="nf">all_nb_sets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;Iterable for all neighbour sets, which also allows inclusion checking.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># graph properties</span>
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="k">def</span> <span class="nf">get_identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nb_set</span><span class="p">):</span>
+        <span class="s2">&quot;Get a unique identifier corresponding to the neighbour set.&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="p">[</span><span class="n">nb_set</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">get_nb_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vtx</span><span class="p">):</span>
+        <span class="s2">&quot;Get the neighbour set corresponding to a given vertex.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">vtx</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">has_pos_row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;Check if the transition graph has the positive row property; in other words, that ever transition matrix has a positive entry in every row.&quot;</span>
+        <span class="c1"># TODO: this is wrong / not correct: need to check positive rows along all paths</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">e_inf</span><span class="o">.</span><span class="n">transition</span><span class="o">.</span><span class="n">pos_row</span><span class="p">()</span> <span class="k">for</span> <span class="n">e_inf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">edge_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">e</span><span class="p">,</span><span class="n">by_label</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the EdgeInfo object associated with the edge.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">by_label</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_lookup</span><span class="p">[</span><span class="n">e</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span>
+
+
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># compute local dimensions</span>
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="k">def</span> <span class="nf">transition_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">by_label</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">transition</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">path</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_is_valid_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">by_label</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if a sequences if edges is in fact a valid path.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">e1</span><span class="o">.</span><span class="n">target</span><span class="p">()</span> <span class="o">==</span> <span class="n">e2</span><span class="o">.</span><span class="n">source</span><span class="p">()</span> <span class="k">for</span> <span class="n">e1</span><span class="p">,</span><span class="n">e2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+
+    <span class="k">def</span> <span class="nf">local_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">by_label</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the local dimension associated with a loop.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">by_label</span><span class="p">:</span>
+            <span class="n">loop</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_lookup</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">loop</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid_path</span><span class="p">(</span><span class="n">loop</span><span class="p">),</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{loop}</span><span class="s2"> is not a valid path&quot;</span>
+            <span class="k">assert</span> <span class="n">loop</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">target</span><span class="p">()</span> <span class="o">==</span> <span class="n">loop</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source</span><span class="p">(),</span> <span class="n">f</span><span class="s2">&quot;</span><span class="si">{loop}</span><span class="s2"> start vertex and end vertex are distinct&quot;</span>
+
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">transition</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">loop</span><span class="p">))</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">measure</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">loop</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">LocalDim</span><span class="p">(</span><span class="n">mat</span><span class="o">.</span><span class="n">spectral_radius</span><span class="p">(),</span><span class="n">L</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">vertex_local_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">vtx</span><span class="p">,</span><span class="n">search_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a sorted list of all possible local dimensions for a cycle (no repeated vertices) containing vtx.&quot;&quot;&quot;</span>
+        <span class="n">cycles</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">all_paths</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span><span class="n">vtx</span><span class="p">,</span><span class="n">vtx</span><span class="p">,</span><span class="n">edges</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">cycle_prods</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">cycles</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="n">search_depth</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dim</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">loop_tups</span><span class="p">)),</span><span class="n">by_label</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="k">for</span> <span class="n">loop_tups</span> <span class="ow">in</span> <span class="n">cycle_prods</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">essential_local_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">search_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">ldims</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vertex_local_dims</span><span class="p">(</span><span class="n">vtx</span><span class="p">,</span><span class="n">search_depth</span><span class="o">=</span><span class="n">search_depth</span><span class="p">)</span> <span class="k">for</span> <span class="n">vtx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">essential_class</span><span class="p">()</span><span class="o">.</span><span class="n">get_vertices</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">Interval</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">ldims</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">ldims</span><span class="p">))</span>
+    
+
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># compute adjacency matrix and Hausdorff dimensions</span>
+    <span class="c1"># -------------------------------------------------</span>
+
+    <span class="k">def</span> <span class="nf">adjacency_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the weighted adjacency matrix with respect to the edge</span>
+<span class="sd">        length function&quot;&quot;&quot;</span>
+        <span class="c1"># generate the adjacency matrix of the essential class</span>
+        <span class="n">ess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">essential_class</span><span class="p">()</span>
+        <span class="n">vtx_arr</span> <span class="o">=</span> <span class="n">ess</span><span class="o">.</span><span class="n">get_vertices</span><span class="p">()</span>
+        <span class="n">idx_lookup</span> <span class="o">=</span> <span class="p">{</span><span class="n">vtx</span><span class="p">:</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">vtx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vtx_arr</span><span class="p">)}</span>
+        <span class="n">evals</span> <span class="o">=</span> <span class="p">[[()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">vtx_arr</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">vtx_arr</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ess</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+            <span class="n">sr</span> <span class="o">=</span> <span class="n">idx_lookup</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">source</span><span class="p">())]</span>
+            <span class="n">tg</span> <span class="o">=</span> <span class="n">idx_lookup</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">target</span><span class="p">())]</span>
+            <span class="n">evals</span><span class="p">[</span><span class="n">sr</span><span class="p">][</span><span class="n">tg</span><span class="p">]</span> <span class="o">=</span> <span class="n">evals</span><span class="p">[</span><span class="n">sr</span><span class="p">][</span><span class="n">tg</span><span class="p">]</span><span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">length</span><span class="p">,)</span>
+
+        <span class="k">return</span> <span class="n">SAdjacencyMatrix</span><span class="p">(</span><span class="n">evals</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">hausdorff_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacency_matrix</span><span class="p">()</span><span class="o">.</span><span class="n">compute_s_val</span><span class="p">()</span>
+
+
+
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># functions to compute fixed net intervals</span>
+    <span class="c1">#  from symbolic representation (a sequence of edges)</span>
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="k">def</span> <span class="nf">net_ivs_below</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
+
+        <span class="n">explored_vtxs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">to_explore</span> <span class="o">=</span> <span class="p">[</span><span class="n">start</span><span class="p">]</span>
+        <span class="k">while</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_explore</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">to_explore</span><span class="p">)</span>
+            <span class="n">all_children</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">(</span><span class="n">net_iv</span><span class="p">)</span> <span class="k">for</span> <span class="n">net_iv</span> <span class="ow">in</span> <span class="n">to_explore</span> <span class="k">if</span> <span class="n">net_iv</span><span class="o">.</span><span class="n">nb_set</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">explored_vtxs</span><span class="p">]</span>
+            <span class="n">explored_vtxs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">net_iv</span><span class="o">.</span><span class="n">nb_set</span> <span class="k">for</span> <span class="n">net_iv</span> <span class="ow">in</span> <span class="n">to_explore</span><span class="p">)</span>
+            <span class="n">to_explore</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">all_children</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">net_ivs_below_depth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">depth</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">to_explore</span> <span class="o">=</span> <span class="p">[</span><span class="n">start</span><span class="p">]</span>
+        <span class="k">while</span><span class="p">(</span><span class="n">depth</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">depth</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">to_explore</span><span class="p">)</span>
+            <span class="n">all_children</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">(</span><span class="n">net_iv</span><span class="p">)</span> <span class="k">for</span> <span class="n">net_iv</span> <span class="ow">in</span> <span class="n">to_explore</span><span class="p">]</span>
+            <span class="n">to_explore</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">all_children</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span> <span class="nf">_extend_iv_by_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">iv</span><span class="p">,</span><span class="n">edge</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given an interval iv, compute the resulting interval after stepping along the edge&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Interval</span><span class="p">(</span>
+                <span class="n">iv</span><span class="o">.</span><span class="n">a</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span><span class="o">.</span><span class="n">t_index</span><span class="o">*</span><span class="n">iv</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span>
+                <span class="n">iv</span><span class="o">.</span><span class="n">a</span><span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span><span class="o">.</span><span class="n">t_index</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span><span class="o">.</span><span class="n">measure</span><span class="p">)</span><span class="o">*</span><span class="n">iv</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">net_iv</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the children of net_iv using the internal graph properties.&quot;&quot;&quot;</span>
+        <span class="n">vtx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="p">[</span><span class="n">net_iv</span><span class="o">.</span><span class="n">nb_set</span><span class="p">]</span>
+        <span class="n">ivs_and_nbs</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_extend_iv_by_edge</span><span class="p">(</span><span class="n">net_iv</span><span class="p">,</span><span class="n">e</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">target</span><span class="p">()])</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">vtx</span><span class="o">.</span><span class="n">out_edges</span><span class="p">())</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">net_iv</span><span class="o">.</span><span class="n">nb_set</span><span class="o">.</span><span class="n">lmax</span><span class="o">*</span><span class="n">net_iv</span><span class="o">.</span><span class="n">delta</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">NetInterval</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">a</span><span class="p">,</span><span class="n">iv</span><span class="o">.</span><span class="n">b</span><span class="p">,</span><span class="n">alpha</span><span class="p">,</span><span class="n">nb</span><span class="p">)</span> <span class="k">for</span> <span class="n">iv</span><span class="p">,</span><span class="n">nb</span> <span class="ow">in</span> <span class="n">ivs_and_nbs</span><span class="p">]</span>
+        
+
+    <span class="k">def</span> <span class="nf">net_iv_from_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_seq</span><span class="p">,</span> <span class="n">by_label</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># first compute where the interval ends up</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">edge_seq</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span>
+
+        <span class="k">if</span> <span class="n">by_label</span><span class="p">:</span>
+            <span class="n">edge_seq</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_lookup</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">edge_seq</span><span class="p">]</span>
+        <span class="n">iv</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_extend_iv_by_edge</span><span class="p">,</span> <span class="n">edge_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+
+        <span class="n">nb_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">edge_seq</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">target</span><span class="p">()]</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">edge_seq</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">source</span><span class="p">()]</span><span class="o">.</span><span class="n">lmax</span><span class="o">*</span><span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">measure</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">edge_seq</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">NetInterval</span><span class="p">(</span><span class="n">iv</span><span class="o">.</span><span class="n">a</span><span class="p">,</span><span class="n">iv</span><span class="o">.</span><span class="n">b</span><span class="p">,</span><span class="n">alpha</span><span class="p">,</span><span class="n">nb_set</span><span class="p">)</span>
+
+
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># compute topological aspects of the graph</span>
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="k">def</span> <span class="nf">essential_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a graph_view consisting of the essential class of the graph.&quot;&quot;&quot;</span>
+        <span class="n">components</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">att</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">label_components</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span><span class="n">attractors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># get the components and the attractor</span>
+        <span class="n">attractor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">att</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)[</span><span class="n">comp</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">components</span><span class="o">.</span><span class="n">a</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">gt</span><span class="o">.</span><span class="n">GraphView</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span><span class="n">vfilt</span><span class="o">=</span><span class="n">attractor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a vertex property map `vprop` such that for any v,</span>
+<span class="sd">        - vprop[v] == -1 if v is an isolated component with no self loop</span>
+<span class="sd">        - vprop[v] == 0 if v is in the attractor (essential class if satisfies finite neighbour condition)</span>
+<span class="sd">        - vprop[b] == n for 1 &lt;= n &lt;= N where N is the number of non-trivial components of the graph.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">components</span><span class="p">,</span> <span class="n">hist</span><span class="p">,</span> <span class="n">att</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">label_components</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span><span class="n">attractors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1"># get the components and the attractor</span>
+        
+        <span class="c1"># boolean array for attractor of the graph</span>
+        <span class="n">attractor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">att</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)[</span><span class="n">comp</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">components</span><span class="o">.</span><span class="n">a</span><span class="p">])</span>
+
+        <span class="c1"># boolean array for isolated vertices of the graph</span>
+        <span class="n">isolated</span><span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">hist</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)[</span><span class="n">components</span><span class="p">[</span><span class="n">vtx</span><span class="p">]]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">vtx</span> <span class="ow">in</span> <span class="n">vtx</span><span class="o">.</span><span class="n">out_neighbours</span><span class="p">()</span> <span class="k">for</span> <span class="n">vtx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">vertices</span><span class="p">()],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="c1"># set isolated components to be type -1</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">place</span><span class="p">(</span><span class="n">components</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">isolated</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># set attractor to be type 0</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">place</span><span class="p">(</span><span class="n">components</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">attractor</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># set all other loop classes to be type 1 through n</span>
+        <span class="n">uniques</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">components</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">lookup_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">elem</span><span class="p">:</span><span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">uniques</span><span class="p">[</span><span class="n">uniques</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">)}</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lookup_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="o">.</span><span class="n">a</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">components</span>
+
+
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># construction methods</span>
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="k">def</span> <span class="nf">add_nb_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nb_set</span><span class="p">,</span> <span class="n">edge_info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">nb_set</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">add_vertex</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">nb_set</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="p">[</span><span class="n">nb_set</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">if</span> <span class="n">parent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_nb_sets</span><span class="p">():</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="p">[</span><span class="n">parent</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span><span class="p">[</span><span class="n">nb_set</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_edge_lookup</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">edge_index</span><span class="p">[</span><span class="n">e</span><span class="p">]]</span> <span class="o">=</span> <span class="n">e</span> <span class="c1"># register edge by index</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge_info</span>
+
+    <span class="k">def</span> <span class="nf">_filter_pos_row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct a list of (vtx,i,nb) triples where vtx is a vertex and nb</span>
+<span class="sd">        is a neighbour such that row i of every outgoing transition matrix is a</span>
+<span class="sd">        row of zeros.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">non_reduced_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#  dct = defaultdict(list)</span>
+        <span class="k">for</span> <span class="n">vtx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">vertices</span><span class="p">():</span>
+            <span class="c1"># list of outgoing transition matrices</span>
+            <span class="n">tr_mats</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">transition</span><span class="o">.</span><span class="n">matrix</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">vtx</span><span class="o">.</span><span class="n">out_edges</span><span class="p">()]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">nb</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_nb_set</span><span class="p">(</span><span class="n">vtx</span><span class="p">)</span><span class="o">.</span><span class="n">sorted_iter</span><span class="p">()):</span>
+                <span class="c1"># check if there are no offspring in any child</span>
+                <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">mat</span> <span class="ow">in</span> <span class="n">tr_mats</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mat</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">non_reduced_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">vtx</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">nb</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">non_reduced_list</span>
+
+    <span class="k">def</span> <span class="nf">_prune_vtx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">vtx_trip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prune the out edges corresponding to vtx_trip, where</span>
+<span class="sd">        vtx_trip = (vtx,i,nb) is a triple corresponding to the vertex, the</span>
+<span class="sd">        row in the outgoing transition matrices that must be removed, and the</span>
+<span class="sd">        neighbour set corresponding to the row.</span>
+
+<span class="sd">        This process removes row i from the outgoing transition matrix, removes</span>
+<span class="sd">        the neighbour from the neighbour set of vtx, and then removes the</span>
+<span class="sd">        column i from all the incoming edges to the vertex set.</span>
+<span class="sd">        If that column makes the transition matrix have size 0, the</span>
+<span class="sd">        corresponding edge is removed</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vtx</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">nb</span> <span class="o">=</span> <span class="n">vtx_trip</span>
+
+        <span class="c1"># update the neighbour set</span>
+        <span class="n">new_nb_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_nb_set</span><span class="p">(</span><span class="n">vtx</span><span class="p">)</span><span class="o">.</span><span class="n">remove_nb</span><span class="p">(</span><span class="n">nb</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">vtx</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_nb_set</span>
+
+        <span class="c1"># remove the row from the outgoing transition matrices</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">vtx</span><span class="o">.</span><span class="n">out_edges</span><span class="p">():</span>
+            <span class="n">new_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">transition</span><span class="o">.</span><span class="n">remove_row</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">new_matrix</span><span class="p">(</span><span class="n">new_mat</span><span class="p">)</span>
+
+        <span class="c1"># remove the column from the incoming transition matrices</span>
+        <span class="c1"># if the matrix becomes empty, delete the edge</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">vtx</span><span class="o">.</span><span class="n">in_edges</span><span class="p">():</span>
+            <span class="n">new_mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">transition</span><span class="o">.</span><span class="n">remove_column</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="c1">#  if new_mat.is_empty():</span>
+                <span class="c1">#  self.g.remove_edge(e)</span>
+            <span class="c1">#  else:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">new_matrix</span><span class="p">(</span><span class="n">new_mat</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">non_red_nbs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#  to_reduce = self._filter_pos_row()</span>
+        <span class="c1">#  non_reduced_neighbours = set()</span>
+        <span class="c1">#  while(len(to_reduce) &gt; 0):</span>
+            <span class="c1">#  for red in to_reduce:</span>
+                <span class="c1">#  # add the neighbour to the list of reduced neighbours</span>
+                <span class="c1">#  non_reduced_neighbours.add(red[2])</span>
+                <span class="c1">#  self._prune_vtx(red)</span>
+            <span class="c1">#  for e in self.g.edges():</span>
+                <span class="c1">#  if self._edge_info[e].transition.is_empty():</span>
+                    <span class="c1">#  self.g.remove_edge(e)</span>
+
+            <span class="c1">#  to_reduce = self._filter_pos_row()</span>
+
+        <span class="c1">#  return non_reduced_neighbours.union(self._terminal_nb_sets)</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_rebuild_lookups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#  reindex the edges in a sane order and rebuild the lookups</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">e</span><span class="o">.</span><span class="n">source</span><span class="p">(),</span><span class="n">e</span><span class="o">.</span><span class="n">target</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">e</span><span class="p">])</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">clear_edges</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">reindex_edges</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">src</span><span class="p">,</span><span class="n">trg</span><span class="p">,</span><span class="n">info</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+            <span class="n">new_e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">src</span><span class="p">,</span><span class="n">trg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">new_e</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edge_lookup</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">edge_index</span><span class="p">[</span><span class="n">e</span><span class="p">]:</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vtx_lookup</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">vertices</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="nf">_collapse_one</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">vtx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">vertices</span><span class="p">():</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vtx</span><span class="o">.</span><span class="n">out_edges</span><span class="p">())</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">out_edge</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">in_edge</span> <span class="ow">in</span> <span class="n">vtx</span><span class="o">.</span><span class="n">in_edges</span><span class="p">():</span>
+                    <span class="n">new_e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">in_edge</span><span class="o">.</span><span class="n">source</span><span class="p">(),</span><span class="n">out_edge</span><span class="o">.</span><span class="n">target</span><span class="p">())</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">new_e</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">in_edge</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span><span class="p">[</span><span class="n">out_edge</span><span class="p">]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">remove_vertex</span><span class="p">(</span><span class="n">vtx</span><span class="p">)</span>
+                <span class="k">break</span>
+
+    <span class="k">def</span> <span class="nf">collapse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n_prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">num_vertices</span><span class="p">()</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collapse_one</span><span class="p">()</span>
+            <span class="n">n_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">num_vertices</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">n_new</span> <span class="o">==</span> <span class="n">n_prev</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">n_prev</span> <span class="o">=</span> <span class="n">n_new</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rebuild_lookups</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">remove_terminal_vertices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove vertices with out degree 0, repair the _vtx_lookup, and return the corresponding list of neighbour sets removed.</span>
+<span class="sd">        Warning: this changes edge and vertex numbering.&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: use graph views / filters instead of mutating the graph</span>
+        <span class="c1"># use gt.GraphView(self.g,vfilt=zero_degs), should be a get_vertex option for out_degree 0</span>
+        <span class="c1"># then update zero_degs each time? does this change the GraphView?</span>
+        <span class="c1"># then can prune directly from the GraphView on the last run?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_nb_sets</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">zero_degs</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_vertex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span><span class="s2">&quot;out&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">while</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">zero_degs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">vtx</span> <span class="ow">in</span> <span class="n">zero_degs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_nb_sets</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span><span class="p">[</span><span class="n">vtx</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">remove_vertex</span><span class="p">(</span><span class="n">zero_degs</span><span class="p">)</span>
+            <span class="n">zero_degs</span> <span class="o">=</span> <span class="n">gt</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_vertex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span><span class="s2">&quot;out&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rebuild_lookups</span><span class="p">()</span>
+
+
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># saving and loading transition graphs</span>
+    <span class="c1"># -------------------------------------------------</span>
+    <span class="c1"># TODO: create internal property maps</span>
+    <span class="c1"># TODO: write methods to re-load the properties that are not internal property maps</span>
+    <span class="c1"># TODO: write save methods to filename, and load methods from filename, creating the additional properties upon reloading</span>
+    <span class="c1"># learn how to implement a python pickle protocol? should be able to include the graph in this too ...</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="c1"># internalize graph properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">graph_properties</span><span class="p">[</span><span class="s2">&quot;edge_info&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">graph_properties</span><span class="p">[</span><span class="s2">&quot;nb_sets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nb_set_from_vtx</span>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">IfsType</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=alexrutar&repo=IfsType&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../structure.html">Library Organization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_documentation.html">API Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Alex Rutar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

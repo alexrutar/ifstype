@@ -1,0 +1,652 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ifstype.ifs &#8212; IfsType  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="ifstype.generations" href="generations_docs.html" />
+    <link rel="prev" title="API Documentation" href="api_documentation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <span class="target" id="module-ifstype.ifs"></span><div class="section" id="ifstype-ifs">
+<h1><a class="reference internal" href="#module-ifstype.ifs" title="ifstype.ifs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.ifs</span></code></a><a class="headerlink" href="#ifstype-ifs" title="Permalink to this headline">¶</a></h1>
+<p>This module contains core classes and methods for use in the simulation
+of any iterated function system.</p>
+<p>Public module attributes:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AffineFunc</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">IFS</span></code></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">ifs_family()</span></code></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.Neighbour" title="ifstype.ifs.Neighbour"><code class="xref py py-class docutils literal notranslate"><span class="pre">Neighbour</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.NeighbourSet" title="ifstype.ifs.NeighbourSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">NeighbourSet</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.NetInterval" title="ifstype.ifs.NetInterval"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetInterval</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.TransitionMatrix" title="ifstype.ifs.TransitionMatrix"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransitionMatrix</span></code></a></p></li>
+</ul>
+</div>
+<dl class="class">
+<dt id="ifstype.AffineFunc">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.</code><code class="sig-name descname">AffineFunc</code><span class="sig-paren">(</span><em class="sig-param">r: numbers.Real = Fraction(1</em>, <em class="sig-param">1)</em>, <em class="sig-param">d: numbers.Real = Fraction(0</em>, <em class="sig-param">1)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/ifs.html#AffineFunc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.AffineFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>An AffineFunc is a real-valued affine function <code class="docutils literal notranslate"><span class="pre">f(x)=r*x+d</span></code>.</p>
+<p>This class is an immutable storage class.
+When called without arguments, it defaults to the identity function.</p>
+<p>Core attributes:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.AffineFunc.r" title="ifstype.AffineFunc.r"><code class="xref py py-attr docutils literal notranslate"><span class="pre">AffineFunc.r</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.AffineFunc.d" title="ifstype.AffineFunc.d"><code class="xref py py-attr docutils literal notranslate"><span class="pre">AffineFunc.d</span></code></a></p></li>
+</ul>
+<p>Methods for function properties:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.AffineFunc.fixed_point" title="ifstype.AffineFunc.fixed_point"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AffineFunc.fixed_point()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.AffineFunc.interval" title="ifstype.AffineFunc.interval"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AffineFunc.interval()</span></code></a></p></li>
+</ul>
+<p>Methods for behaviour as a function:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.AffineFunc.__call__" title="ifstype.AffineFunc.__call__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AffineFunc.__call__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.AffineFunc.compose" title="ifstype.AffineFunc.compose"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AffineFunc.compose()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.AffineFunc.inverse" title="ifstype.AffineFunc.inverse"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AffineFunc.inverse()</span></code></a></p></li>
+</ul>
+<dl class="attribute">
+<dt id="ifstype.AffineFunc.r">
+<code class="sig-name descname">r</code><a class="headerlink" href="#ifstype.AffineFunc.r" title="Permalink to this definition">¶</a></dt>
+<dd><p>The affine factor</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ifstype.AffineFunc.d">
+<code class="sig-name descname">d</code><a class="headerlink" href="#ifstype.AffineFunc.d" title="Permalink to this definition">¶</a></dt>
+<dd><p>The translation factor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.AffineFunc.fixed_point">
+<code class="sig-name descname">fixed_point</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; numbers.Real<a class="reference internal" href="_modules/ifstype/ifs.html#AffineFunc.fixed_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.AffineFunc.fixed_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the point which the affine function fixes.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span><span class="o">.</span><span class="n">fixed_point</span><span class="p">()</span>
+<span class="go">Fraction(-3, 1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span><span class="p">(</span><span class="n">aff</span><span class="o">.</span><span class="n">fixed_point</span><span class="p">())</span>
+<span class="go">Fraction(-3, 1)</span>
+</pre></div>
+</div>
+<p>The affine factor must have absolute value not equal to 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – if linear coefficient is equal to 1</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">p</span></code> such that <code class="docutils literal notranslate"><span class="pre">f(p)</span> <span class="pre">==</span> <span class="pre">p</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.AffineFunc.interval">
+<code class="sig-name descname">interval</code><span class="sig-paren">(</span><em class="sig-param">initial_iv: ifstype.exact.interval.Interval = Interval(a=Fraction(0</em>, <em class="sig-param">1)</em>, <em class="sig-param">b=Fraction(1</em>, <em class="sig-param">1))</em><span class="sig-paren">)</span> &#x2192; ifstype.exact.interval.Interval<a class="reference internal" href="_modules/ifstype/ifs.html#AffineFunc.interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.AffineFunc.interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the set image <code class="docutils literal notranslate"><span class="pre">f(initial_iv)={f(x):x</span> <span class="pre">in</span> <span class="pre">initial_iv}</span></code>
+corresponding to the function.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="o">-</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span><span class="o">.</span><span class="n">interval</span><span class="p">()</span>
+<span class="go">Interval(a=Fraction(1, 4), b=Fraction(3, 4))</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>initial_iv</strong> – interval to compute image of</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>image of the interval</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.AffineFunc.__call__">
+<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param">x: numbers.Real</em><span class="sig-paren">)</span> &#x2192; numbers.Real<a class="reference internal" href="_modules/ifstype/ifs.html#AffineFunc.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.AffineFunc.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the class as a python function.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">Fraction(4, 1)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> – call value</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>result of applying function to x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.AffineFunc.compose">
+<code class="sig-name descname">compose</code><span class="sig-paren">(</span><em class="sig-param">g: ifstype.ifs.AffineFunc</em><span class="sig-paren">)</span> &#x2192; ifstype.ifs.AffineFunc<a class="reference internal" href="_modules/ifstype/ifs.html#AffineFunc.compose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.AffineFunc.compose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the affine function resulting from right composition with
+the affine function g.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">afg</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">afg</span><span class="p">)</span>
+<span class="go">AffineFunc(r=Fraction(4, 1), d=Fraction(19, 3))</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>g</strong> – any affine function</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a new affine function instance <code class="docutils literal notranslate"><span class="pre">f(g(x))</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.AffineFunc.inverse">
+<code class="sig-name descname">inverse</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; ifstype.ifs.AffineFunc<a class="reference internal" href="_modules/ifstype/ifs.html#AffineFunc.inverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.AffineFunc.inverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the inverse function of the linear map.</p>
+<p>Requires that <a class="reference internal" href="#ifstype.AffineFunc.r" title="ifstype.AffineFunc.r"><code class="xref py py-attr docutils literal notranslate"><span class="pre">r</span></code></a> is non-zero.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">aff</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="go">AffineFunc(r=Fraction(1, 2), d=Fraction(-1, 6))</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a new affine function instance <code class="docutils literal notranslate"><span class="pre">g(x)</span></code> such that
+<code class="docutils literal notranslate"><span class="pre">g(f(x)=f(g(x))=x</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ZeroDivisionError</strong> – if <a class="reference internal" href="#ifstype.AffineFunc.r" title="ifstype.AffineFunc.r"><code class="xref py py-attr docutils literal notranslate"><span class="pre">r</span></code></a> is zero</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ifstype.IFS">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.</code><code class="sig-name descname">IFS</code><span class="sig-paren">(</span><em class="sig-param">funcs: Sequence[ifstype.ifs.AffineFunc]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/ifs.html#IFS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.IFS" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class representing an iterated function system such that the convex
+hull of the invariant compact set is [0,1].</p>
+<p>After initialization, the instance has the following attributes:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.IFS.funcs" title="ifstype.IFS.funcs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">funcs</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.IFS.probs" title="ifstype.IFS.probs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">probs</span></code></a></p></li>
+</ul>
+<p>The following methods are also defined:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.IFS.__init__" title="ifstype.IFS.__init__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__init__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.IFS.__str__" title="ifstype.IFS.__str__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__str__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.IFS.extend" title="ifstype.IFS.extend"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extend()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.IFS.invariant_convex_hull" title="ifstype.IFS.invariant_convex_hull"><code class="xref py py-meth docutils literal notranslate"><span class="pre">invariant_convex_hull()</span></code></a></p></li>
+</ul>
+<dl class="attribute">
+<dt id="ifstype.IFS.funcs">
+<code class="sig-name descname">funcs</code><a class="headerlink" href="#ifstype.IFS.funcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tuple of contraction functions associated to the IFS.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ifstype.IFS.probs">
+<code class="sig-name descname">probs</code><a class="headerlink" href="#ifstype.IFS.probs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tuple of symbolic probabilities <cite>ifstype.exact.SymbolicElement</cite>, one
+for each associated to each contraction function.</p>
+<p>If probabilities is set with a sequence of real numbers, they must be
+strictly greater than 0 and sum to 1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Setter</dt>
+<dd class="field-odd"><p>Associate numeric values to the probabilities which sum to 1.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.IFS.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">funcs: Sequence[ifstype.ifs.AffineFunc]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/ifstype/ifs.html#IFS.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.IFS.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize iterated function system instance.</p>
+<p>The <cite>funcs</cite> argument is a list of AffineFunc instances with linear
+factor having absolute value strictly between 0 and 1.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <cite>funcs</cite> return value of the undecorated function may
+not be equal to the <a class="reference internal" href="#ifstype.IFS.funcs" title="ifstype.IFS.funcs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IFS.funcs</span></code></a> attribute, since
+<cite>funcs</cite> is sorted and normalized to have invariant convex
+hull [0,1].</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – if the linear coefficients r do not have absolute
+value strictly between 0 and 1</p>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><p><strong>funcs</strong> – a sequence of <a class="reference internal" href="#ifstype.AffineFunc" title="ifstype.AffineFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">AffineFunc</span></code></a> instances</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.IFS.__str__">
+<code class="sig-name descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/ifstype/ifs.html#IFS.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.IFS.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return user-readable string representation of the iterated function
+system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>string representation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.IFS.extend">
+<code class="sig-name descname">extend</code><span class="sig-paren">(</span><em class="sig-param">aff_iterable: Iterable[ifstype.ifs.AffineFunc], with_prob: bool = False</em><span class="sig-paren">)</span> &#x2192; Union[AbstractSet[Tuple[ifstype.exact.symbolic.SymbolicElement, ifstype.ifs.AffineFunc, ifstype.ifs.AffineFunc]], AbstractSet[ifstype.ifs.AffineFunc]]<a class="reference internal" href="_modules/ifstype/ifs.html#IFS.extend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.IFS.extend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a generator of extensions of elements of <cite>aff_iterable</cite> by
+all possible functions in the IFS.</p>
+<p>Chains the generator where for each function g of aff_iterable and f of
+the instance variable f, we compute g.compose(f).</p>
+<p>If with_prob is True, the elements of the iterables are tuples
+<code class="docutils literal notranslate"><span class="pre">(p,aff_init,aff_res)</span></code> where <code class="docutils literal notranslate"><span class="pre">p</span></code> is the symbolic probability
+associated with the function, <code class="docutils literal notranslate"><span class="pre">aff_init</span></code> is the initial affine
+function, and <code class="docutils literal notranslate"><span class="pre">aff_res</span></code> is the resulting affine function after
+composing with some element of <a class="reference internal" href="#ifstype.IFS.funcs" title="ifstype.IFS.funcs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">funcs</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aff_iterable</strong> – an iterable of AffineFunc instances</p></li>
+<li><p><strong>with_prob</strong> – boolean to return additional information.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>an iterable of all extensions</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.IFS.invariant_convex_hull">
+<code class="sig-name descname">invariant_convex_hull</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; ifstype.exact.interval.Interval<a class="reference internal" href="_modules/ifstype/ifs.html#IFS.invariant_convex_hull"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.IFS.invariant_convex_hull" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the convex hull of the invariant set K.</p>
+<p>The algorithm used is adapted from from József Vass’ paper, Section
+3.2, in <a class="reference external" href="https://arxiv.org/abs/1502.03788">https://arxiv.org/abs/1502.03788</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>closed interval convex hull</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="ifstype.ifs_family">
+<code class="sig-prename descclassname">&#64;</code><code class="sig-prename descclassname">ifstype.</code><code class="sig-name descname">ifs_family</code><span class="sig-paren">(</span><em class="sig-param">ifs_func: Callable[[...], Sequence[ifstype.ifs.AffineFunc]]</em><span class="sig-paren">)</span> &#x2192; Callable[[...], ifstype.ifs.IFS]<a class="reference internal" href="_modules/ifstype/ifs.html#ifs_family"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs_family" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience decorator to construct families of iterated function systems
+parametrized by some set of values.</p>
+<p>Used to decorate functions of the form:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">ifs</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">def_p</span><span class="p">,</span> <span class="n">a_1</span><span class="o">=</span><span class="n">def_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">a_n</span><span class="o">=</span><span class="n">def_n</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">AffineFunc</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="o">...</span><span class="p">,</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="o">...</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">a_1,...,a_n</span></code> are arbitrary parameter names, arbitrary default
+values <code class="docutils literal notranslate"><span class="pre">def_1,...,def_n</span></code> for the parameters, and <code class="docutils literal notranslate"><span class="pre">def_p</span></code> default
+argument for probabilities (see <a class="reference internal" href="#ifstype.IFS.probs" title="ifstype.IFS.probs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IFS.probs</span></code></a>).
+The arguments must all be specified as keyword arguments.
+The decorated function has the same keyword arguments and returns an
+<a class="reference internal" href="#ifstype.IFS" title="ifstype.IFS"><code class="xref py py-class docutils literal notranslate"><span class="pre">IFS</span></code></a> instance from the corresponding probabilities and contraction
+functions.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <cite>funcs</cite> return value of the undecorated function may not
+be equal to the <a class="reference internal" href="#ifstype.IFS.funcs" title="ifstype.IFS.funcs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IFS.funcs</span></code></a> attribute, since <cite>funcs</cite> is
+sorted and normalized to have invariant convex hull [0,1].</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ifs_func</strong> – the function being decorated</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>decorated function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="ifstype.ifs.Neighbour">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.ifs.</code><code class="sig-name descname">Neighbour</code><span class="sig-paren">(</span><em class="sig-param">r: numbers.Real = Fraction(1</em>, <em class="sig-param">1)</em>, <em class="sig-param">d: numbers.Real = Fraction(0</em>, <em class="sig-param">1)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/ifs.html#Neighbour"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.Neighbour" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.ifs.AffineFunc</span></code></p>
+<p>A neighbour is a special type of normalized affine function, used to
+represent a neighbour of a net interval. Neighbours have a fixed order
+which is used when computing transition matrices.</p>
+<p>This class is an immutable storage class.</p>
+<p>Methods for creation:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.ifs.Neighbour.from_aff" title="ifstype.ifs.Neighbour.from_aff"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_aff()</span></code></a></p></li>
+</ul>
+<p>Convenience attributes:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.ifs.Neighbour.a" title="ifstype.ifs.Neighbour.a"><code class="xref py py-attr docutils literal notranslate"><span class="pre">a</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.Neighbour.L" title="ifstype.ifs.Neighbour.L"><code class="xref py py-attr docutils literal notranslate"><span class="pre">L</span></code></a></p></li>
+</ul>
+<dl class="attribute">
+<dt id="ifstype.ifs.Neighbour.a">
+<code class="sig-name descname">a</code><a class="headerlink" href="#ifstype.ifs.Neighbour.a" title="Permalink to this definition">¶</a></dt>
+<dd><p>The a descriptor of the neighbour.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ifstype.ifs.Neighbour.L">
+<code class="sig-name descname">L</code><a class="headerlink" href="#ifstype.ifs.Neighbour.L" title="Permalink to this definition">¶</a></dt>
+<dd><p>The L descriptor of the neighbour.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.Neighbour.from_aff">
+<em class="property">classmethod </em><code class="sig-name descname">from_aff</code><span class="sig-paren">(</span><em class="sig-param">aff: ifstype.ifs.AffineFunc</em>, <em class="sig-param">interval: ifstype.exact.interval.Interval</em><span class="sig-paren">)</span> &#x2192; ifstype.ifs.Neighbour<a class="reference internal" href="_modules/ifstype/ifs.html#Neighbour.from_aff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.Neighbour.from_aff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the neighbour corresponding to <cite>aff</cite> by normalizing against
+<cite>interval</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aff</strong> – the affine function</p></li>
+<li><p><strong>interval</strong> – the interval</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the corresponding neighbour</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ifstype.ifs.NeighbourSet">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.ifs.</code><code class="sig-name descname">NeighbourSet</code><span class="sig-paren">(</span><em class="sig-param">neighbours=(Neighbour(r=Fraction(1</em>, <em class="sig-param">1)</em>, <em class="sig-param">d=Fraction(0</em>, <em class="sig-param">1))</em>, <em class="sig-param">)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/ifs.html#NeighbourSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NeighbourSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>A neigbour set represents a set of unique neighbours.</p>
+<p>This class is an immutable storage class.</p>
+<p>Attributes:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.ifs.NeighbourSet.neighbours" title="ifstype.ifs.NeighbourSet.neighbours"><code class="xref py py-attr docutils literal notranslate"><span class="pre">neighbours</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.NeighbourSet.lmax" title="ifstype.ifs.NeighbourSet.lmax"><code class="xref py py-attr docutils literal notranslate"><span class="pre">lmax</span></code></a></p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">__len__</span></code></p></li>
+</ul>
+<p>Iteration and containment:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.ifs.NeighbourSet.__iter__" title="ifstype.ifs.NeighbourSet.__iter__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__iter__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.NeighbourSet.__contains__" title="ifstype.ifs.NeighbourSet.__contains__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__contains__()</span></code></a></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">sorted_iter()</span></code></p></li>
+</ul>
+<p>Canonical string representation:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.ifs.NeighbourSet.__str__" title="ifstype.ifs.NeighbourSet.__str__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__str__()</span></code></a></p></li>
+</ul>
+<p>Convenince methods:</p>
+<ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">maximal_nbs()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">nonmaximal_nbs()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_nb()</span></code></p></li>
+</ul>
+<dl class="attribute">
+<dt id="ifstype.ifs.NeighbourSet.neighbours">
+<code class="sig-name descname">neighbours</code><a class="headerlink" href="#ifstype.ifs.NeighbourSet.neighbours" title="Permalink to this definition">¶</a></dt>
+<dd><p>the set of neighbours</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ifstype.ifs.NeighbourSet.lmax">
+<code class="sig-name descname">lmax</code><a class="headerlink" href="#ifstype.ifs.NeighbourSet.lmax" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum of the absolute value of the affine factor among
+neighbours.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.NeighbourSet.__iter__">
+<code class="sig-name descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Iterable[ifstype.ifs.Neighbour]<a class="reference internal" href="_modules/ifstype/ifs.html#NeighbourSet.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NeighbourSet.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>An iterable returning the neighbours.
+The neighbours are not iterated in any particular order.
+See <code class="xref py py-meth docutils literal notranslate"><span class="pre">sorted_iter()</span></code> to get the neighbours in a fixed order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the neighbour iterable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.NeighbourSet.__str__">
+<code class="sig-name descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/ifstype/ifs.html#NeighbourSet.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NeighbourSet.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a canonical string representation of the neighbour set.
+Assuming that the string representations for the coefficients of the
+neighbour functions are unique, the strings for neighbours are the same
+if and only if the neighbour sets are equal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the string representation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.NeighbourSet.__contains__">
+<code class="sig-name descname">__contains__</code><span class="sig-paren">(</span><em class="sig-param">nb: ifstype.ifs.Neighbour</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/ifstype/ifs.html#NeighbourSet.__contains__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NeighbourSet.__contains__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a neighbour is contained in the neighbour set</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nb</strong> – the neighbour</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if and only if the neighbour is in the neighbour set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ifstype.ifs.NetInterval">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.ifs.</code><code class="sig-name descname">NetInterval</code><span class="sig-paren">(</span><em class="sig-param">a: numbers.Real = Fraction(0</em>, <em class="sig-param">1)</em>, <em class="sig-param">b: numbers.Real = Fraction(1</em>, <em class="sig-param">1)</em>, <em class="sig-param">alpha: numbers.Real = Fraction(2</em>, <em class="sig-param">1)</em>, <em class="sig-param">nb_set: ifstype.ifs.NeighbourSet = NeighbourSet(neighbours=frozenset({Neighbour(r=Fraction(1</em>, <em class="sig-param">1)</em>, <em class="sig-param">d=Fraction(0</em>, <em class="sig-param">1))}))</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/ifs.html#NetInterval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NetInterval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.exact.interval.Interval</span></code></p>
+<p>A special interval type representing a net interval of generation alpha.
+This contains the interval information, as well as the neighbour set.</p>
+<p>In addition to the attributes and methods inherited from the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.exact.Interval</span></code> base class, a net interval also has the
+following attributes and methods:</p>
+<p>Attributes:</p>
+<ul class="simple">
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">alpha</span></code></p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">nb_set</span></code></p></li>
+</ul>
+<p>Methods for creation:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.ifs.NetInterval.from_funcs" title="ifstype.ifs.NetInterval.from_funcs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_funcs()</span></code></a></p></li>
+</ul>
+<p>Methods for computation with net intervals:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.ifs.NetInterval.transition_gen" title="ifstype.ifs.NetInterval.transition_gen"><code class="xref py py-meth docutils literal notranslate"><span class="pre">transition_gen()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.NetInterval.normalization_func" title="ifstype.ifs.NetInterval.normalization_func"><code class="xref py py-meth docutils literal notranslate"><span class="pre">normalization_func()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.NetInterval.containing_funcs" title="ifstype.ifs.NetInterval.containing_funcs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">containing_funcs()</span></code></a></p></li>
+</ul>
+<dl class="method">
+<dt id="ifstype.ifs.NetInterval.from_funcs">
+<em class="property">classmethod </em><code class="sig-name descname">from_funcs</code><span class="sig-paren">(</span><em class="sig-param">a: numbers.Real, b: numbers.Real, alpha: numbers.Real, funcs: Iterable[ifstype.ifs.AffineFunc]</em><span class="sig-paren">)</span> &#x2192; ifstype.ifs.NetInterval<a class="reference internal" href="_modules/ifstype/ifs.html#NetInterval.from_funcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NetInterval.from_funcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the neighbour set of the net interval given an iterable of
+(not necessarily distinct) affine functions S such that S([0,1])
+contains [<cite>a</cite>,`b`].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the net interval</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.NetInterval.transition_gen">
+<code class="sig-name descname">transition_gen</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; numbers.Real<a class="reference internal" href="_modules/ifstype/ifs.html#NetInterval.transition_gen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NetInterval.transition_gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the largest generation less that <code class="xref py py-attr docutils literal notranslate"><span class="pre">alpha</span></code> for which the
+net interval is no longer a valid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the transition generation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.NetInterval.normalization_func">
+<code class="sig-name descname">normalization_func</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; ifstype.ifs.AffineFunc<a class="reference internal" href="_modules/ifstype/ifs.html#NetInterval.normalization_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NetInterval.normalization_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the unique affine function S such that S([0,1]) is equal to
+the net interval.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the affine function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.NetInterval.containing_funcs">
+<code class="sig-name descname">containing_funcs</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Iterable[ifstype.ifs.AffineFunc]<a class="reference internal" href="_modules/ifstype/ifs.html#NetInterval.containing_funcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.NetInterval.containing_funcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute an iterable of functions which correspond to the neighbours
+in the neighbour set of the net interval. Each affine function
+generates a distinct neighbour of the net interval.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>an iterable of affine functions</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ifstype.ifs.TransitionMatrix">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.ifs.</code><code class="sig-name descname">TransitionMatrix</code><span class="sig-paren">(</span><em class="sig-param">double_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/ifs.html#TransitionMatrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.TransitionMatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.exact.symbolic.SymbolicMatrix</span></code></p>
+<p>A transition matrix is a special class used to represent the transition
+matrix associated to an edge in the transition graph. In addition to being
+a SymbolicMatrix, the transition matrix also remembers the neighbours which
+correspond to the rows and columns</p>
+<p>Methods not inherited from <code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.exact.SymbolicMatric</span></code>:</p>
+<ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">pow_row()</span></code></p></li>
+<li><p><a class="reference internal" href="#ifstype.ifs.TransitionMatrix.spectral_radius" title="ifstype.ifs.TransitionMatrix.spectral_radius"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectral_radius()</span></code></a></p></li>
+</ul>
+<dl class="method">
+<dt id="ifstype.ifs.TransitionMatrix.pos_row">
+<code class="sig-name descname">pos_row</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/ifstype/ifs.html#TransitionMatrix.pos_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.ifs.TransitionMatrix.pos_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the matrix has the positive row property, in other words
+that each row contains a non-zero entry.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if and only if it has the positive row property.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.ifs.TransitionMatrix.spectral_radius">
+<code class="sig-name descname">spectral_radius</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ifstype.ifs.TransitionMatrix.spectral_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>…</p>
+</dd></dl>
+
+</dd></dl>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">IfsType</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=alexrutar&repo=IfsType&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structure.html">Library Organization</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api_documentation.html">API Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.ifs</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generations_docs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.generations</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="graph_docs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.graph</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="api_documentation.html">API Documentation</a><ul>
+      <li>Previous: <a href="api_documentation.html" title="previous chapter">API Documentation</a></li>
+      <li>Next: <a href="generations_docs.html" title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.generations</span></code></a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Alex Rutar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/ifs_docs.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

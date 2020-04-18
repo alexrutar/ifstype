@@ -1,0 +1,726 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ifstype.ifs &#8212; IfsType  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ifstype.ifs</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;:mod:`ifstype.ifs`</span>
+<span class="sd">=====================</span>
+
+<span class="sd">This module contains core classes and methods for use in the simulation</span>
+<span class="sd">of any iterated function system.</span>
+
+<span class="sd">Public module attributes:</span>
+
+<span class="sd">* :class:`AffineFunc`</span>
+<span class="sd">* :class:`IFS`</span>
+<span class="sd">* :func:`ifs_family`</span>
+<span class="sd">* :class:`Neighbour`</span>
+<span class="sd">* :class:`NeighbourSet`</span>
+<span class="sd">* :class:`NetInterval`</span>
+<span class="sd">* :class:`TransitionMatrix`</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="k">import</span> <span class="n">Real</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">AbstractSet</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">import</span> <span class="nn">attr</span>
+
+<span class="kn">from</span> <span class="nn">.exact</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">Constants</span> <span class="k">as</span> <span class="n">C</span><span class="p">,</span> <span class="n">Interval</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">,</span>
+    <span class="n">SymbolicRing</span><span class="p">,</span> <span class="n">SymbolicMatrix</span><span class="p">,</span> <span class="n">SymbolicElement</span>
+<span class="p">)</span>
+
+<div class="viewcode-block" id="AffineFunc"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.AffineFunc">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AffineFunc</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;An AffineFunc is a real-valued affine function ``f(x)=r*x+d``.</span>
+
+<span class="sd">    This class is an immutable storage class.</span>
+<span class="sd">    When called without arguments, it defaults to the identity function.</span>
+
+<span class="sd">    Core attributes:</span>
+
+<span class="sd">    * :attr:`AffineFunc.r`</span>
+<span class="sd">    * :attr:`AffineFunc.d`</span>
+
+<span class="sd">    Methods for function properties:</span>
+
+<span class="sd">    * :meth:`AffineFunc.fixed_point`</span>
+<span class="sd">    * :meth:`AffineFunc.interval`</span>
+
+<span class="sd">    Methods for behaviour as a function:</span>
+
+<span class="sd">    * :meth:`AffineFunc.__call__`</span>
+<span class="sd">    * :meth:`AffineFunc.compose`</span>
+<span class="sd">    * :meth:`AffineFunc.inverse`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span><span class="p">:</span> <span class="n">Real</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">C</span><span class="o">.</span><span class="n">n_1</span><span class="p">)</span> <span class="c1">#: The affine factor</span>
+    <span class="n">d</span><span class="p">:</span> <span class="n">Real</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">C</span><span class="o">.</span><span class="n">n_0</span><span class="p">)</span> <span class="c1">#: The translation factor</span>
+
+<div class="viewcode-block" id="AffineFunc.fixed_point"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.AffineFunc.fixed_point">[docs]</a>    <span class="k">def</span> <span class="nf">fixed_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the point which the affine function fixes.</span>
+
+<span class="sd">        &gt;&gt;&gt; aff = AffineFunc(Fraction(2),Fraction(3))</span>
+<span class="sd">        &gt;&gt;&gt; aff.fixed_point()</span>
+<span class="sd">        Fraction(-3, 1)</span>
+<span class="sd">        &gt;&gt;&gt; aff(aff.fixed_point())</span>
+<span class="sd">        Fraction(-3, 1)</span>
+
+<span class="sd">        The affine factor must have absolute value not equal to 1.</span>
+
+<span class="sd">        :raises ValueError: if linear coefficient is equal to 1</span>
+<span class="sd">        :return: ``p`` such that ``f(p) == p``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">n_1</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Linear coefficient must not be equal to 1&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AffineFunc.interval"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.AffineFunc.interval">[docs]</a>    <span class="k">def</span> <span class="nf">interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">initial_iv</span><span class="p">:</span> <span class="n">Interval</span><span class="o">=</span><span class="n">Interval</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="n">Interval</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the set image ``f(initial_iv)={f(x):x in initial_iv}``</span>
+<span class="sd">        corresponding to the function.</span>
+
+<span class="sd">        &gt;&gt;&gt; aff = AffineFunc(-Fraction(1,2),Fraction(3,4))</span>
+<span class="sd">        &gt;&gt;&gt; aff.interval()</span>
+<span class="sd">        Interval(a=Fraction(1, 4), b=Fraction(3, 4))</span>
+
+<span class="sd">        :param initial_iv: interval to compute image of</span>
+<span class="sd">        :return: image of the interval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">left</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">initial_iv</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">initial_iv</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">left</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Interval</span><span class="p">(</span><span class="n">left</span><span class="p">,</span><span class="n">right</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Interval</span><span class="p">(</span><span class="n">right</span><span class="p">,</span><span class="n">left</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AffineFunc.__call__"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.AffineFunc.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Real</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Use the class as a python function.</span>
+
+<span class="sd">        &gt;&gt;&gt; aff = AffineFunc(Fraction(2),Fraction(3))</span>
+<span class="sd">        &gt;&gt;&gt; aff(Fraction(1,2))</span>
+<span class="sd">        Fraction(4, 1)</span>
+
+<span class="sd">        :param x: call value</span>
+<span class="sd">        :return: result of applying function to x</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span></div>
+
+<div class="viewcode-block" id="AffineFunc.compose"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.AffineFunc.compose">[docs]</a>    <span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">g</span><span class="p">:</span> <span class="s1">&#39;AffineFunc&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;AffineFunc&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the affine function resulting from right composition with</span>
+<span class="sd">        the affine function g.</span>
+
+<span class="sd">        &gt;&gt;&gt; aff = AffineFunc(Fraction(2),Fraction(1,3))</span>
+<span class="sd">        &gt;&gt;&gt; afg = AffineFunc(Fraction(2),Fraction(3))</span>
+<span class="sd">        &gt;&gt;&gt; aff.compose(afg)</span>
+<span class="sd">        AffineFunc(r=Fraction(4, 1), d=Fraction(19, 3))</span>
+
+<span class="sd">        :param g: any affine function</span>
+<span class="sd">        :return: a new affine function instance ``f(g(x))``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="o">*</span><span class="n">g</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="o">*</span><span class="n">g</span><span class="o">.</span><span class="n">d</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AffineFunc.inverse"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.AffineFunc.inverse">[docs]</a>    <span class="k">def</span> <span class="nf">inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;AffineFunc&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the inverse function of the linear map.</span>
+
+<span class="sd">        Requires that :attr:`r` is non-zero.</span>
+
+<span class="sd">        &gt;&gt;&gt; aff = AffineFunc(Fraction(2),Fraction(1,3))</span>
+<span class="sd">        AffineFunc(r=Fraction(1, 2), d=Fraction(-1, 6))</span>
+
+<span class="sd">        :return: a new affine function instance ``g(x)`` such that</span>
+<span class="sd">                 ``g(f(x)=f(g(x))=x``</span>
+
+<span class="sd">        :raises ZeroDivisionError: if :attr:`r` is zero</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">(</span><span class="s2">&quot;Cannot compute inverse of affine &quot;</span>
+                                    <span class="s2">&quot;function with linear coefficient 0&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="IFS"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.IFS">[docs]</a><span class="k">class</span> <span class="nc">IFS</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class representing an iterated function system such that the convex</span>
+<span class="sd">    hull of the invariant compact set is [0,1].</span>
+
+<span class="sd">    After initialization, the instance has the following attributes:</span>
+
+<span class="sd">    * :attr:`funcs`</span>
+<span class="sd">    * :attr:`probs`</span>
+
+<span class="sd">    The following methods are also defined:</span>
+
+<span class="sd">    * :meth:`__init__`</span>
+<span class="sd">    * :meth:`__str__`</span>
+<span class="sd">    * :meth:`extend`</span>
+<span class="sd">    * :meth:`invariant_convex_hull`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="IFS.__init__"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.IFS.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AffineFunc</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Initialize iterated function system instance.</span>
+
+<span class="sd">        The `funcs` argument is a list of AffineFunc instances with linear</span>
+<span class="sd">        factor having absolute value strictly between 0 and 1.</span>
+
+<span class="sd">        .. warning:: The `funcs` return value of the undecorated function may</span>
+<span class="sd">                     not be equal to the :attr:`IFS.funcs` attribute, since</span>
+<span class="sd">                     `funcs` is sorted and normalized to have invariant convex</span>
+<span class="sd">                     hull [0,1].</span>
+
+<span class="sd">        :raises ValueError: if the linear coefficients r do not have absolute</span>
+<span class="sd">                            value strictly between 0 and 1</span>
+
+<span class="sd">        :param funcs: a sequence of :class:`AffineFunc` instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check params</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">n_0</span><span class="o">&lt;</span><span class="nb">abs</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">r</span><span class="p">)</span><span class="o">&lt;</span><span class="n">C</span><span class="o">.</span><span class="n">n_1</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;funcs linear coefficients r must have 0&lt;|r|&lt;1&quot;</span><span class="p">)</span>
+
+        <span class="c1"># use symbolic probabilities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_syr</span> <span class="o">=</span> <span class="n">SymbolicRing</span><span class="p">((</span><span class="n">f</span><span class="s2">&quot;p{i+1}&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">funcs</span><span class="p">))))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+        <span class="c1"># return list of probabilities in order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_syr</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_normalize</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">funcs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AffineFunc</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Tuple of contraction functions associated to the IFS.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">probs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">SymbolicElement</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Tuple of symbolic probabilities `ifstype.exact.SymbolicElement`, one</span>
+<span class="sd">        for each associated to each contraction function.</span>
+
+<span class="sd">        If probabilities is set with a sequence of real numbers, they must be</span>
+<span class="sd">        strictly greater than 0 and sum to 1</span>
+
+<span class="sd">        :setter: Associate numeric values to the probabilities which sum to 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probs</span>
+
+    <span class="nd">@probs</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">probs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Real</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1">#  if all(C.n_0&lt;=p for p in probs) and sum(probs) != C.n_1:</span>
+            <span class="c1">#  raise ValueError(</span>
+                <span class="c1">#  &quot;IFS probabilities must be non-negative and sum to 1&quot;)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">probs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;funcs and probabilities must be the same size&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_syr</span><span class="o">.</span><span class="n">set_eval</span><span class="p">({</span><span class="n">f</span><span class="s2">&quot;p{i+1}&quot;</span><span class="p">:</span><span class="n">p</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">probs</span><span class="p">)})</span>
+
+<div class="viewcode-block" id="IFS.__str__"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.IFS.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return user-readable string representation of the iterated function</span>
+<span class="sd">        system.</span>
+
+<span class="sd">        :return: string representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;IFS(funcs=</span><span class="si">{self.funcs}</span><span class="s2">)&quot;</span></div>
+
+    <span class="k">def</span> <span class="nf">_normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Normalize the contraction functions of the instance such that the</span>
+<span class="sd">        invariant convex hull is [0,1]</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">conv_normalize</span><span class="p">(</span><span class="n">aff</span><span class="p">,</span><span class="n">interval</span><span class="p">):</span>
+            <span class="n">iv_func</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="n">interval</span><span class="o">.</span><span class="n">b</span><span class="o">-</span><span class="n">interval</span><span class="o">.</span><span class="n">a</span><span class="p">,</span><span class="n">interval</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">iv_func</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">aff</span><span class="p">)</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">iv_func</span><span class="p">)</span>
+
+        <span class="n">cvx_hull</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invariant_convex_hull</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">conv_normalize</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">cvx_hull</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IFS.invariant_convex_hull"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.IFS.invariant_convex_hull">[docs]</a>    <span class="k">def</span> <span class="nf">invariant_convex_hull</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Interval</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the convex hull of the invariant set K.</span>
+
+<span class="sd">        The algorithm used is adapted from from József Vass&#39; paper, Section</span>
+<span class="sd">        3.2, in https://arxiv.org/abs/1502.03788.</span>
+
+<span class="sd">        :return: closed interval convex hull</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="n">tup</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">tup</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span>
+
+        <span class="k">def</span> <span class="nf">ct_from_tuple</span><span class="p">(</span><span class="n">tup</span><span class="p">):</span>
+            <span class="s2">&quot;Create the affine function associated to the tuple argument&quot;</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">tup</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">[</span><span class="n">letter</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">f</span>
+
+        <span class="n">n</span><span class="o">=</span><span class="mi">2</span> <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">r</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">)</span> <span class="k">else</span> <span class="mi">4</span>
+
+        <span class="n">all_x</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span>
+             <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">)),</span><span class="n">repeat</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+             <span class="k">if</span> <span class="n">value</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">all_b</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">)),</span><span class="n">repeat</span><span class="o">=</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span>
+            <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+
+        <span class="n">all_addresses</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">b_vals</span><span class="p">,</span><span class="n">x_vals</span><span class="p">)</span> <span class="k">for</span> <span class="n">b_vals</span><span class="p">,</span> <span class="n">x_vals</span>
+            <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">all_b</span><span class="p">,</span><span class="n">all_x</span><span class="p">))</span>
+
+        <span class="n">ext</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ct_from_tuple</span><span class="p">(</span><span class="n">b</span><span class="p">)(</span><span class="n">ct_from_tuple</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">fixed_point</span><span class="p">())</span> <span class="k">for</span> <span class="n">b</span><span class="p">,</span><span class="n">x</span>
+            <span class="ow">in</span> <span class="n">all_addresses</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">Interval</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">ext</span><span class="p">),</span><span class="nb">max</span><span class="p">(</span><span class="n">ext</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="IFS.extend"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.IFS.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">aff_iterable</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AffineFunc</span><span class="p">],</span>
+            <span class="n">with_prob</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
+                <span class="n">AbstractSet</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">SymbolicElement</span><span class="p">,</span><span class="n">AffineFunc</span><span class="p">,</span><span class="n">AffineFunc</span><span class="p">]],</span>
+                <span class="n">AbstractSet</span><span class="p">[</span><span class="n">AffineFunc</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Return a generator of extensions of elements of `aff_iterable` by</span>
+<span class="sd">        all possible functions in the IFS.</span>
+
+<span class="sd">        Chains the generator where for each function g of aff_iterable and f of</span>
+<span class="sd">        the instance variable f, we compute g.compose(f).</span>
+
+<span class="sd">        If with_prob is True, the elements of the iterables are tuples</span>
+<span class="sd">        ``(p,aff_init,aff_res)`` where ``p`` is the symbolic probability</span>
+<span class="sd">        associated with the function, ``aff_init`` is the initial affine</span>
+<span class="sd">        function, and ``aff_res`` is the resulting affine function after</span>
+<span class="sd">        composing with some element of :attr:`funcs`.</span>
+
+<span class="sd">        :param aff_iterable: an iterable of AffineFunc instances</span>
+<span class="sd">        :param with_prob: boolean to return additional information.</span>
+<span class="sd">        :return: an iterable of all extensions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">with_prob</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">ctr_f</span><span class="p">,</span><span class="n">ctr_f</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">f</span>
+                    <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">probs</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">ctr_f</span> <span class="ow">in</span> <span class="n">aff_iterable</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">ctr_f</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">)</span> <span class="k">for</span> <span class="n">ctr_f</span>
+                <span class="ow">in</span> <span class="n">aff_iterable</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="ifs_family"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.ifs_family">[docs]</a><span class="k">def</span> <span class="nf">ifs_family</span><span class="p">(</span>
+        <span class="n">ifs_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AffineFunc</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">IFS</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convenience decorator to construct families of iterated function systems</span>
+<span class="sd">    parametrized by some set of values.</span>
+
+<span class="sd">    Used to decorate functions of the form::</span>
+
+<span class="sd">        def ifs(probs=def_p, a_1=def_1, ..., a_n=def_n):</span>
+<span class="sd">            return [AffineFunc(...), ..., AffineFunc(...)]</span>
+
+<span class="sd">    where ``a_1,...,a_n`` are arbitrary parameter names, arbitrary default</span>
+<span class="sd">    values ``def_1,...,def_n`` for the parameters, and ``def_p`` default</span>
+<span class="sd">    argument for probabilities (see :attr:`.IFS.probs`).</span>
+<span class="sd">    The arguments must all be specified as keyword arguments.</span>
+<span class="sd">    The decorated function has the same keyword arguments and returns an</span>
+<span class="sd">    :class:`IFS` instance from the corresponding probabilities and contraction</span>
+<span class="sd">    functions.</span>
+
+<span class="sd">    .. warning:: The `funcs` return value of the undecorated function may not</span>
+<span class="sd">                 be equal to the :attr:`IFS.funcs` attribute, since `funcs` is</span>
+<span class="sd">                 sorted and normalized to have invariant convex hull [0,1].</span>
+
+<span class="sd">    :param ifs_func: the function being decorated</span>
+<span class="sd">    :return: decorated function</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">ifs_func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">fn_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span><span class="n">v</span><span class="o">.</span><span class="n">default</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span>
+            <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">ifs_func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">func_params</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">fn_kwargs</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="n">func_params</span><span class="p">[</span><span class="s1">&#39;probs&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;Function &#39;</span><span class="si">{ifs_func.__name__}</span><span class="s2">&#39; decorated by &#39;ifs_family&#39; &quot;</span>
+                <span class="n">f</span><span class="s2">&quot;has no default keyword &#39;probs&#39;.&quot;</span><span class="p">)</span>
+
+        <span class="n">funcs</span> <span class="o">=</span> <span class="n">ifs_func</span><span class="p">(</span><span class="o">**</span><span class="n">func_params</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">probs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">probs</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s2">&quot;List of funcs returned by &#39;</span><span class="si">{ifs_func.__name__}</span><span class="s2">&#39; &quot;</span>
+                    <span class="n">f</span><span class="s2">&quot;decorated by &#39;ifs_family&#39; has different length than &quot;</span>
+                    <span class="n">f</span><span class="s2">&quot;keyword &#39;probs&#39;.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># add probabilities, resorting if necessary</span>
+            <span class="n">sorted_f_pairs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="nb">zip</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span><span class="n">probs</span><span class="p">),</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">d</span><span class="p">,</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">r</span><span class="p">))</span>
+            <span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">sorted_f_pairs</span><span class="p">]</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">sorted_f_pairs</span><span class="p">]</span>
+            <span class="n">ifs</span> <span class="o">=</span> <span class="n">IFS</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+            <span class="n">ifs</span><span class="o">.</span><span class="n">probs</span> <span class="o">=</span> <span class="n">probs</span>
+            <span class="k">return</span> <span class="n">ifs</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">funcs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:(</span><span class="n">x</span><span class="o">.</span><span class="n">d</span><span class="p">,</span><span class="n">x</span><span class="o">.</span><span class="n">r</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">IFS</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+<div class="viewcode-block" id="Neighbour"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.Neighbour">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">order</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Neighbour</span><span class="p">(</span><span class="n">AffineFunc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A neighbour is a special type of normalized affine function, used to</span>
+<span class="sd">    represent a neighbour of a net interval. Neighbours have a fixed order</span>
+<span class="sd">    which is used when computing transition matrices.</span>
+
+<span class="sd">    This class is an immutable storage class.</span>
+
+<span class="sd">    Methods for creation:</span>
+
+<span class="sd">    * :meth:`from_aff`</span>
+
+<span class="sd">    Convenience attributes:</span>
+
+<span class="sd">    * :attr:`a`</span>
+<span class="sd">    * :attr:`L`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">a</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;The a descriptor of the neighbour.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">L</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;The L descriptor of the neighbour.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span>
+
+<div class="viewcode-block" id="Neighbour.from_aff"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.Neighbour.from_aff">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_aff</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span><span class="n">aff</span><span class="p">:</span> <span class="n">AffineFunc</span><span class="p">,</span> <span class="n">interval</span><span class="p">:</span> <span class="n">Interval</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Neighbour&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create the neighbour corresponding to `aff` by normalizing against</span>
+<span class="sd">        `interval`.</span>
+
+<span class="sd">        :param aff: the affine function</span>
+<span class="sd">        :param interval: the interval</span>
+<span class="sd">        :return: the corresponding neighbour</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="n">interval</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span><span class="n">interval</span><span class="o">.</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">aff</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">r</span><span class="p">,</span><span class="n">func</span><span class="o">.</span><span class="n">d</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="NeighbourSet"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NeighbourSet">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">NeighbourSet</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A neigbour set represents a set of unique neighbours.</span>
+
+<span class="sd">    This class is an immutable storage class.</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">    * :attr:`neighbours`</span>
+<span class="sd">    * :attr:`lmax`</span>
+<span class="sd">    * :attr:`__len__`</span>
+
+<span class="sd">    Iteration and containment:</span>
+
+<span class="sd">    * :meth:`__iter__`</span>
+<span class="sd">    * :meth:`__contains__`</span>
+<span class="sd">    * :meth:`sorted_iter`</span>
+
+<span class="sd">    Canonical string representation:</span>
+
+<span class="sd">    * :meth:`__str__`</span>
+
+<span class="sd">    Convenince methods:</span>
+
+<span class="sd">    * :meth:`maximal_nbs`</span>
+<span class="sd">    * :meth:`nonmaximal_nbs`</span>
+<span class="sd">    * :meth:`remove_nb`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">neighbours</span><span class="p">:</span> <span class="n">AbstractSet</span><span class="p">[</span><span class="n">Neighbour</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span>
+        <span class="n">converter</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">(</span><span class="n">Neighbour</span><span class="p">(),))</span> <span class="c1">#: the set of neighbours</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lmax</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The maximum of the absolute value of the affine factor among</span>
+<span class="sd">        neighbours.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">L</span><span class="p">)</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The length of a neighbour set is the number of neighbours in it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neighbours</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NeighbourSet.__iter__"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NeighbourSet.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Neighbour</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;An iterable returning the neighbours.</span>
+<span class="sd">        The neighbours are not iterated in any particular order.</span>
+<span class="sd">        See :meth:`sorted_iter` to get the neighbours in a fixed order.</span>
+
+<span class="sd">        :return: the neighbour iterable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neighbours</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">sorted_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Neighbour</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;An iterable returning the neighbours.</span>
+<span class="sd">        The neighbours are iterated in a fixed, global order.</span>
+
+<span class="sd">        :return: the neighbour iterable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+<div class="viewcode-block" id="NeighbourSet.__contains__"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NeighbourSet.__contains__">[docs]</a>    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">nb</span><span class="p">:</span> <span class="n">Neighbour</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Check if a neighbour is contained in the neighbour set</span>
+
+<span class="sd">        :param nb: the neighbour</span>
+<span class="sd">        :return: True if and only if the neighbour is in the neighbour set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">nb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbours</span></div>
+
+<div class="viewcode-block" id="NeighbourSet.__str__"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NeighbourSet.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return a canonical string representation of the neighbour set.</span>
+<span class="sd">        Assuming that the string representations for the coefficients of the</span>
+<span class="sd">        neighbour functions are unique, the strings for neighbours are the same</span>
+<span class="sd">        if and only if the neighbour sets are equal.</span>
+
+<span class="sd">        :return: the string representation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;(</span><span class="si">{nb.d}</span><span class="s2">,</span><span class="si">{nb.L}</span><span class="s2">)&quot;</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">maximal_nbs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Neighbour</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the neigbours in the neighbour set of maximal size.</span>
+
+<span class="sd">        See also :meth:`nonmaximal_nbs`.</span>
+
+<span class="sd">        :return: an iterable of maximal neighbours</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">nb</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">L</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">lmax</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">nonmaximal_nbs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Neighbour</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the neigbours in the neighbour set not of maximal size.</span>
+
+<span class="sd">        See also :meth:`maximal_nbs`.</span>
+
+<span class="sd">        :return: an iterable of neighbours which are not maximal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">nb</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">L</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lmax</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">remove_nb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nb</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;NeighbourSet&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Construct a new neighbour set by removing a particular neighbour .</span>
+
+<span class="sd">        :return: the new neighbour set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">enb</span> <span class="k">for</span> <span class="n">enb</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">enb</span> <span class="o">!=</span> <span class="n">nb</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetInterval"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NetInterval">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">NetInterval</span><span class="p">(</span><span class="n">Interval</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A special interval type representing a net interval of generation alpha.</span>
+<span class="sd">    This contains the interval information, as well as the neighbour set.</span>
+
+<span class="sd">    In addition to the attributes and methods inherited from the</span>
+<span class="sd">    :class:`ifstype.exact.Interval` base class, a net interval also has the</span>
+<span class="sd">    following attributes and methods:</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">    * :attr:`alpha`</span>
+<span class="sd">    * :attr:`nb_set`</span>
+
+<span class="sd">    Methods for creation:</span>
+
+<span class="sd">    * :meth:`from_funcs`</span>
+
+<span class="sd">    Methods for computation with net intervals:</span>
+
+<span class="sd">    * :meth:`transition_gen`</span>
+<span class="sd">    * :meth:`normalization_func`</span>
+<span class="sd">    * :meth:`containing_funcs`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n">Real</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">C</span><span class="o">.</span><span class="n">n_base</span><span class="p">)</span> <span class="c1">#: the generation</span>
+    <span class="n">nb_set</span><span class="p">:</span> <span class="n">NeighbourSet</span><span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">NeighbourSet</span><span class="p">())</span> <span class="c1">#: the neighbour set</span>
+
+<div class="viewcode-block" id="NetInterval.from_funcs"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NetInterval.from_funcs">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_funcs</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">a</span><span class="p">:</span> <span class="n">Real</span><span class="p">,</span>
+            <span class="n">b</span><span class="p">:</span> <span class="n">Real</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="p">:</span> <span class="n">Real</span><span class="p">,</span>
+            <span class="n">funcs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AffineFunc</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;NetInterval&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the neighbour set of the net interval given an iterable of</span>
+<span class="sd">        (not necessarily distinct) affine functions S such that S([0,1])</span>
+<span class="sd">        contains [`a`,`b`].</span>
+
+<span class="sd">        :return: the net interval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">iv</span> <span class="o">=</span> <span class="n">Interval</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">nb_set</span> <span class="o">=</span> <span class="n">NeighbourSet</span><span class="p">(</span><span class="n">Neighbour</span><span class="o">.</span><span class="n">from_aff</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">iv</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">alpha</span><span class="p">,</span><span class="n">nb_set</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetInterval.transition_gen"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NetInterval.transition_gen">[docs]</a>    <span class="k">def</span> <span class="nf">transition_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the largest generation less that :attr:`alpha` for which the</span>
+<span class="sd">        net interval is no longer a valid.</span>
+
+<span class="sd">        :return: the transition generation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nb_set</span><span class="o">.</span><span class="n">lmax</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">delta</span></div>
+
+<div class="viewcode-block" id="NetInterval.normalization_func"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NetInterval.normalization_func">[docs]</a>    <span class="k">def</span> <span class="nf">normalization_func</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AffineFunc</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the unique affine function S such that S([0,1]) is equal to</span>
+<span class="sd">        the net interval.</span>
+
+<span class="sd">        :return: the affine function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">AffineFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetInterval.containing_funcs"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.NetInterval.containing_funcs">[docs]</a>    <span class="k">def</span> <span class="nf">containing_funcs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AffineFunc</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Compute an iterable of functions which correspond to the neighbours</span>
+<span class="sd">        in the neighbour set of the net interval. Each affine function</span>
+<span class="sd">        generates a distinct neighbour of the net interval.</span>
+
+<span class="sd">        :return: an iterable of affine functions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalization_func</span><span class="p">()</span><span class="o">.</span><span class="n">compose</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nb_set</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="TransitionMatrix"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.TransitionMatrix">[docs]</a><span class="k">class</span> <span class="nc">TransitionMatrix</span><span class="p">(</span><span class="n">SymbolicMatrix</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A transition matrix is a special class used to represent the transition</span>
+<span class="sd">    matrix associated to an edge in the transition graph. In addition to being</span>
+<span class="sd">    a SymbolicMatrix, the transition matrix also remembers the neighbours which</span>
+<span class="sd">    correspond to the rows and columns</span>
+
+<span class="sd">    Methods not inherited from :class:`ifstype.exact.SymbolicMatric`:</span>
+
+<span class="sd">    * :meth:`pow_row`</span>
+<span class="sd">    * :meth:`spectral_radius`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TransitionMatrix.pos_row"><a class="viewcode-back" href="../../ifs_docs.html#ifstype.TransitionMatrix.pos_row">[docs]</a>    <span class="k">def</span> <span class="nf">pos_row</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Check if the matrix has the positive row property, in other words</span>
+<span class="sd">        that each row contains a non-zero entry.</span>
+
+<span class="sd">        :return: True if and only if it has the positive row property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">x</span><span class="o">!=</span><span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">)</span></div>
+
+    <span class="c1">#  def spectral_radius(self) -&gt; Real:</span>
+        <span class="c1">#  &quot;&quot;&quot;Compute the approximate spectral radius of the transition matrix,</span>
+        <span class="c1">#  assuming that probabilities have been set in the corresponding IFS.</span>
+
+        <span class="c1">#  See :attr:`.IFS.probs` for details on how to set probability values.</span>
+
+        <span class="c1">#  :return: real-valued spectral radius</span>
+        <span class="c1">#  &quot;&quot;&quot;</span>
+        <span class="c1">#  return np.abs(np.linalg.eigvals(np.array(self))).max()</span>
+
+    <span class="k">def</span> <span class="nf">q_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">q</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">)</span><span class="o">**</span><span class="n">q</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">IfsType</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=alexrutar&repo=IfsType&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../structure.html">Library Organization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_documentation.html">API Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Alex Rutar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

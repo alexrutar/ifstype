@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ifstype.graph &#8212; IfsType  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="ifstype.generations" href="generations_docs.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <span class="target" id="module-ifstype.graph"></span><div class="section" id="ifstype-graph">
+<h1><a class="reference internal" href="#module-ifstype.graph" title="ifstype.graph"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.graph</span></code></a><a class="headerlink" href="#ifstype-graph" title="Permalink to this headline">¶</a></h1>
+<p>This module implements the <code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.graph.TransitionGraph</span></code> class which
+implements the transition graph of an IFS and related computations which depend
+only on the transition graph.</p>
+<p>This module also implements some related transition graph classes.</p>
+<p>Public module attributes:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TransitionGraph</span></code></p></li>
+<li><p><a class="reference internal" href="#ifstype.graph.LocalDim" title="ifstype.graph.LocalDim"><code class="xref py py-class docutils literal notranslate"><span class="pre">LocalDim</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.graph.EdgeInfo" title="ifstype.graph.EdgeInfo"><code class="xref py py-class docutils literal notranslate"><span class="pre">EdgeInfo</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.graph.SAdjacencyMatrix" title="ifstype.graph.SAdjacencyMatrix"><code class="xref py py-class docutils literal notranslate"><span class="pre">SAdjacencyMatrix</span></code></a></p></li>
+</ul>
+</div>
+<dl class="class">
+<dt id="ifstype.graph.LocalDim">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.graph.</code><code class="sig-name descname">LocalDim</code><span class="sig-paren">(</span><em class="sig-param">spr: numbers.Real</em>, <em class="sig-param">ln: numbers.Real</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/graph.html#LocalDim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.LocalDim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represent local dimensions for easy printing and visualization of what
+the values are.</p>
+<p>Special methods:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.graph.LocalDim.__init__" title="ifstype.graph.LocalDim.__init__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__init__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.graph.LocalDim.__float__" title="ifstype.graph.LocalDim.__float__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__float__()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.graph.LocalDim.__str__" title="ifstype.graph.LocalDim.__str__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__str__()</span></code></a></p></li>
+</ul>
+<dl class="method">
+<dt id="ifstype.graph.LocalDim.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">spr: numbers.Real</em>, <em class="sig-param">ln: numbers.Real</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/ifstype/graph.html#LocalDim.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.LocalDim.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the local dimension with two parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spr</strong> – the spectral radius of the transition matrix of the path</p></li>
+<li><p><strong>ln</strong> – the length of the path</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.graph.LocalDim.__float__">
+<code class="sig-name descname">__float__</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/ifstype/graph.html#LocalDim.__float__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.LocalDim.__float__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the actual float approximation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>float approximation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.graph.LocalDim.__str__">
+<code class="sig-name descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/ifstype/graph.html#LocalDim.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.LocalDim.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a human-readable string representation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>string representation</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ifstype.graph.EdgeInfo">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.graph.</code><code class="sig-name descname">EdgeInfo</code><a class="reference internal" href="_modules/ifstype/graph.html#EdgeInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.EdgeInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represent the information intrinsic to a fixed edge (other than the
+source and the target.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ifstype.graph.SAdjacencyMatrix">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.graph.</code><code class="sig-name descname">SAdjacencyMatrix</code><span class="sig-paren">(</span><em class="sig-param">mat_values: List[List[Tuple[numbers.Real, ...]]]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/graph.html#SAdjacencyMatrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.SAdjacencyMatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represent s-adjacency matrices, which are symbolic adjacency matrices
+where the entries are sums of elements of the form r^s, where r is fixed
+and s can vary.</p>
+<p>The matrix is stored symbolically, but particular numpy.ndarray instances
+can be generated automatically.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s_adj</span> <span class="o">=</span> <span class="n">SAdjacencyMatrix</span><span class="p">([[(</span><span class="mi">1</span><span class="p">,),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)],[(),(</span><span class="mi">2</span><span class="p">,)]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">s_adj</span><span class="p">)</span>
+<span class="go">[[1, (2)^s + (3)^s],</span>
+<span class="go"> [0, (2)^s        ]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s_adj</span><span class="o">.</span><span class="n">set_s_val</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s_adj</span><span class="o">.</span><span class="n">spectral_radius</span><span class="p">()</span>
+<span class="go">1.4142135623730951</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s_adj</span><span class="o">.</span><span class="n">compute_s_val</span><span class="p">()</span>
+<span class="go">(0.99993896484375, 1)</span>
+</pre></div>
+</div>
+<p>Initialization:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.graph.SAdjacencyMatrix.__init__" title="ifstype.graph.SAdjacencyMatrix.__init__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__init__()</span></code></a></p></li>
+</ul>
+<p>Methods:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.graph.SAdjacencyMatrix.set_s_val" title="ifstype.graph.SAdjacencyMatrix.set_s_val"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_s_val()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.graph.SAdjacencyMatrix.spectral_radius" title="ifstype.graph.SAdjacencyMatrix.spectral_radius"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectral_radius()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.graph.SAdjacencyMatrix.compute_s_val" title="ifstype.graph.SAdjacencyMatrix.compute_s_val"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_s_val()</span></code></a></p></li>
+</ul>
+<dl class="method">
+<dt id="ifstype.graph.SAdjacencyMatrix.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">mat_values: List[List[Tuple[numbers.Real, ...]]]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/ifstype/graph.html#SAdjacencyMatrix.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.SAdjacencyMatrix.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the s-adjacency matrix. The only parameter
+<code class="docutils literal notranslate"><span class="pre">mat_values</span></code> is a double-nested list of tuples. A tuple
+(r1,…,rn) in position (i,j) represents the entry r1^s + … + rn^s in
+position (i,j) of the s-adjacency matrix. Empty tuples are treated as
+0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mat_values</strong> – the matrix values</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – if <code class="docutils literal notranslate"><span class="pre">mat_values</span></code> is not a square matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.graph.SAdjacencyMatrix.set_s_val">
+<code class="sig-name descname">set_s_val</code><span class="sig-paren">(</span><em class="sig-param">s: numbers.Real</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/ifstype/graph.html#SAdjacencyMatrix.set_s_val"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.SAdjacencyMatrix.set_s_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the current evaluation value of s to be a fixed real number
+strictly greater than 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>s</strong> – evaluation strictly greater than 0</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – if s &lt;= 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.graph.SAdjacencyMatrix.spectral_radius">
+<code class="sig-name descname">spectral_radius</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; numbers.Real<a class="reference internal" href="_modules/ifstype/graph.html#SAdjacencyMatrix.spectral_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.SAdjacencyMatrix.spectral_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the spectral radius at the current fixed s value.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The s value must be set using <a class="reference internal" href="#ifstype.graph.SAdjacencyMatrix.set_s_val" title="ifstype.graph.SAdjacencyMatrix.set_s_val"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_s_val()</span></code></a> before
+calling this function.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.graph.SAdjacencyMatrix.compute_s_val">
+<code class="sig-name descname">compute_s_val</code><span class="sig-paren">(</span><em class="sig-param">tol: numbers.Real = 0.0001</em><span class="sig-paren">)</span> &#x2192; numbers.Real<a class="reference internal" href="_modules/ifstype/graph.html#SAdjacencyMatrix.compute_s_val"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.graph.SAdjacencyMatrix.compute_s_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a value s (within :param tol:) such that the spectral
+radius of the s-adjacency matrix is 1. If all entries have value
+between 0 and 1, this value is unique. Returns a lower bound and upper
+bound on s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tol</strong> – error tolerance</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>pair (lower s, upper s)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">IfsType</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=alexrutar&repo=IfsType&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structure.html">Library Organization</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api_documentation.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ifs_docs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.ifs</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="generations_docs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.generations</span></code></a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.graph</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="api_documentation.html">API Documentation</a><ul>
+      <li>Previous: <a href="generations_docs.html" title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.generations</span></code></a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Alex Rutar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/graph_docs.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

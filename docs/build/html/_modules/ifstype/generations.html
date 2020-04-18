@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ifstype.generations &#8212; IfsType  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ifstype.generations</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;:mod:`ifstype.generations`</span>
+<span class="sd">=============================</span>
+
+<span class="sd">This module implements the :class:`ifstype.generations.Generations` class which</span>
+<span class="sd">governs the computation of the transition graph from an IFS and other child</span>
+<span class="sd">dependency relationships.</span>
+
+<span class="sd">Public module attributes:</span>
+
+<span class="sd">* :class:`Generations`</span>
+<span class="sd">* :class:`LengthFunction`</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="k">import</span> <span class="n">Real</span>
+
+<span class="kn">from</span> <span class="nn">.exact</span> <span class="k">import</span> <span class="n">Constants</span> <span class="k">as</span> <span class="n">C</span><span class="p">,</span> <span class="n">Interval</span>
+
+<span class="kn">from</span> <span class="nn">.ifs</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">AffineFunc</span><span class="p">,</span> <span class="n">Neighbour</span><span class="p">,</span> <span class="n">NeighbourSet</span><span class="p">,</span> <span class="n">NetInterval</span><span class="p">,</span>
+    <span class="n">TransitionMatrix</span><span class="p">,</span> <span class="n">IFS</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.graph</span> <span class="k">import</span> <span class="n">TransitionGraph</span><span class="p">,</span> <span class="n">EdgeInfo</span>
+
+
+<span class="k">class</span> <span class="nc">LengthFunction</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class with existing length functions for general usage.</span>
+
+<span class="sd">    Implemented length functions:</span>
+
+<span class="sd">    * :meth:`measure`</span>
+<span class="sd">    * :meth:`transition`</span>
+
+<span class="sd">    Note that each method must take as arguments two parameters, where the</span>
+<span class="sd">    first is the net interval forresponding to the child and the second is the</span>
+<span class="sd">    neighbour set of the parent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">measure</span><span class="p">(</span><span class="n">nt</span><span class="p">:</span><span class="n">NetInterval</span><span class="p">,</span> <span class="n">nb_set</span><span class="p">:</span><span class="n">NeighbourSet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Measure length function.</span>
+
+<span class="sd">        :param nt: normalized child</span>
+<span class="sd">        :param nb_set: parent neighbour set</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">nt</span><span class="o">.</span><span class="n">delta</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">transition</span><span class="p">(</span><span class="n">nt</span><span class="p">:</span><span class="n">NetInterval</span><span class="p">,</span> <span class="n">nb_set</span><span class="p">:</span><span class="n">NeighbourSet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Real</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Transition length function.</span>
+
+<span class="sd">        :param nt: normalized child</span>
+<span class="sd">        :param nb_set: parent neighbour set</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">nt</span><span class="o">.</span><span class="n">delta</span><span class="o">*</span><span class="n">nt</span><span class="o">.</span><span class="n">nb_set</span><span class="o">.</span><span class="n">lmax</span><span class="o">/</span><span class="n">nb_set</span><span class="o">.</span><span class="n">lmax</span>
+
+<div class="viewcode-block" id="Generations"><a class="viewcode-back" href="../../generations_docs.html#ifstype.generations.Generations">[docs]</a><span class="k">class</span> <span class="nc">Generations</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Compute children relationships and the transition graph based on a fixed</span>
+<span class="sd">    iterated function system.</span>
+
+<span class="sd">    Initialization:</span>
+
+<span class="sd">    * :meth:`__init__`</span>
+
+<span class="sd">    Methods to compute the transition graph:</span>
+
+<span class="sd">    * :meth:`compute_graph`</span>
+
+<span class="sd">    Methods to determine IFS properties:</span>
+
+<span class="sd">    * :meth:`verify_fnc`</span>
+
+<span class="sd">    Methods to compute children:</span>
+
+<span class="sd">    * :meth:`child_intervals`</span>
+<span class="sd">    * :meth:`children`</span>
+<span class="sd">    * :meth:`children_with_transition`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Generations.__init__"><a class="viewcode-back" href="../../generations_docs.html#ifstype.generations.Generations.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifs</span><span class="p">:</span><span class="n">IFS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Generations object.</span>
+
+<span class="sd">        :param ifs: the iterated function system</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifs</span> <span class="o">=</span> <span class="n">ifs</span></div>
+
+    <span class="c1"># main transition graph construction method</span>
+<div class="viewcode-block" id="Generations.compute_graph"><a class="viewcode-back" href="../../generations_docs.html#ifstype.generations.Generations.compute_graph">[docs]</a>    <span class="k">def</span> <span class="nf">compute_graph</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+            <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NetInterval</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">non_red_nbs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">set</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransitionGraph</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the transition graph based on the stored IFS.</span>
+
+<span class="sd">        This method will compute the children for at minimum `depth` net</span>
+<span class="sd">        intervals before stopping; if this method does not terminate earlier,</span>
+<span class="sd">        the transition graph may be incomplete.</span>
+
+<span class="sd">        To verify completeness of thetransition graph, see</span>
+<span class="sd">        :attr:`ifstype.Graph.is_fnc`</span>
+
+<span class="sd">        See also :meth:`verify_fnc`.</span>
+
+<span class="sd">        :param depth: the minimum number of net intervals for which children</span>
+<span class="sd">                      have been computed before stopping.</span>
+<span class="sd">        :param root: the root net interval from which the transition graph</span>
+<span class="sd">                     should be computed.</span>
+<span class="sd">        :param non_red_nbs: a (previously computed) set of reduced</span>
+<span class="sd">                                   neighbours from which the neighbours</span>
+<span class="sd">                                   most be drawn</span>
+<span class="sd">        :return: the transition graph</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">NetInterval</span><span class="p">()</span>
+        <span class="n">transition_graph</span> <span class="o">=</span> <span class="n">TransitionGraph</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifs</span><span class="p">)</span>
+
+        <span class="n">transition_graph</span><span class="o">.</span><span class="n">add_nb_set</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">nb_set</span><span class="p">)</span>
+        <span class="n">computed_children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">ch_to_compute</span> <span class="o">=</span> <span class="p">{</span><span class="n">root</span><span class="o">.</span><span class="n">nb_set</span><span class="p">}</span>
+
+        <span class="k">while</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ch_to_compute</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">computed_children</span><span class="p">)</span><span class="o">&lt;</span><span class="n">depth</span><span class="p">):</span>
+            <span class="n">all_children_params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">ch</span> <span class="o">+</span> <span class="p">(</span><span class="n">nb_set</span><span class="p">,)</span> <span class="k">for</span> <span class="n">ch</span>
+                    <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children_with_transition</span><span class="p">(</span>
+                        <span class="n">nb_set</span><span class="p">,</span>
+                        <span class="n">non_red_nbs</span><span class="o">=</span><span class="n">non_red_nbs</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">nb_set</span>
+                <span class="ow">in</span> <span class="n">ch_to_compute</span>
+                <span class="k">if</span> <span class="n">nb_set</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">computed_children</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">ch_nb_set</span><span class="p">,</span> <span class="n">e_info</span><span class="p">,</span> <span class="n">parent_nb_set</span> <span class="ow">in</span> <span class="n">all_children_params</span><span class="p">:</span>
+                <span class="n">transition_graph</span><span class="o">.</span><span class="n">add_nb_set</span><span class="p">(</span>
+                    <span class="n">ch_nb_set</span><span class="p">,</span>
+                    <span class="n">parent</span><span class="o">=</span><span class="n">parent_nb_set</span><span class="p">,</span>
+                    <span class="n">edge_info</span><span class="o">=</span><span class="n">e_info</span><span class="p">)</span>
+
+            <span class="n">computed_children</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">cp</span> <span class="ow">in</span> <span class="n">all_children_params</span><span class="p">)</span>
+            <span class="n">ch_to_compute</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cp</span> <span class="ow">in</span> <span class="n">all_children_params</span><span class="p">)</span>
+
+        <span class="c1"># if IFS is weak finite type:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ch_to_compute</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">transition_graph</span><span class="o">.</span><span class="n">is_fnc</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">non_red_nbs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">transition_graph</span><span class="o">.</span><span class="n">collapse</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">transition_graph</span><span class="o">.</span><span class="n">remove_terminal_vertices</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">transition_graph</span></div>
+
+<div class="viewcode-block" id="Generations.verify_fnc"><a class="viewcode-back" href="../../generations_docs.html#ifstype.generations.Generations.verify_fnc">[docs]</a>    <span class="k">def</span> <span class="nf">verify_fnc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">depth</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Attempt to verify if the stored IFS satisfies the finite neighbour</span>
+<span class="sd">        condition.</span>
+
+<span class="sd">        This method is a pared down version of :meth:`compute_graph`, where</span>
+<span class="sd">        only the graph dependency structure is computed (without creating the</span>
+<span class="sd">        transition graph). The method will compute the children for at minimum</span>
+<span class="sd">        `depth` distinct neighbour sets. It returns a verification pair</span>
+<span class="sd">        ``(bool, computed)``.</span>
+
+<span class="sd">        See also :meth:`compute_graph`.</span>
+
+<span class="sd">        * If ``bool`` is true, then the IFS satisfies the finite neighbour</span>
+<span class="sd">          condition with at most ``computed`` distinct neighbour sets</span>
+<span class="sd">          (there may be fewer).</span>
+<span class="sd">        * If ``bool`` is false, then the IFS may or may not be weak finite</span>
+<span class="sd">          type, but there are at least ``computed`` distinct neighbour sets.</span>
+
+<span class="sd">        :param depth: the minimum number of net intervals for which children</span>
+<span class="sd">                      have been computed before stopping.</span>
+<span class="sd">        :return: the verification pair</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">computed_children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">ch_to_compute</span> <span class="o">=</span> <span class="p">{</span><span class="n">NeighbourSet</span><span class="p">()}</span>
+
+        <span class="k">while</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ch_to_compute</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">computed_children</span><span class="p">)</span><span class="o">&lt;</span><span class="n">depth</span><span class="p">):</span>
+            <span class="c1"># TODO: maybe faster to do this with a list?</span>
+            <span class="n">new</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">(</span><span class="n">nb_set</span><span class="p">)</span> <span class="k">for</span> <span class="n">nb_set</span>
+                <span class="ow">in</span> <span class="n">ch_to_compute</span> <span class="k">if</span> <span class="n">nb_set</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">computed_children</span><span class="p">))</span>
+            <span class="n">computed_children</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ch_to_compute</span><span class="p">)</span>
+            <span class="n">ch_to_compute</span> <span class="o">=</span> <span class="n">new</span>
+
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_update</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">computed_children</span><span class="p">)</span></div>
+
+    <span class="c1"># -----------------------------------------------------------------</span>
+    <span class="c1"># child computation methods</span>
+    <span class="c1"># -----------------------------------------------------------------</span>
+<div class="viewcode-block" id="Generations.child_intervals"><a class="viewcode-back" href="../../generations_docs.html#ifstype.generations.Generations.child_intervals">[docs]</a>    <span class="k">def</span> <span class="nf">child_intervals</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">new_nbs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Neighbour</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Interval</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Compute all possible normalized intervals formed by endpoints below</span>
+<span class="sd">        a net interval [0,1] with from an iterable of neighbours `new_nbs`.</span>
+
+<span class="sd">        :param new_nbs: an iterable of neighbours</span>
+<span class="sd">        :return: a list of intervals in ascending order</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_eps</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">n_0</span><span class="p">),</span><span class="n">f</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">n_1</span><span class="p">))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">new_nbs</span><span class="p">))</span>
+        <span class="n">child_endpoints</span> <span class="o">=</span> <span class="p">[</span><span class="n">C</span><span class="o">.</span><span class="n">n_0</span><span class="p">]</span> \
+                <span class="o">+</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ep</span> <span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="n">new_eps</span> <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">ep</span> <span class="ow">and</span> <span class="n">ep</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> \
+                <span class="o">+</span> <span class="p">[</span><span class="n">C</span><span class="o">.</span><span class="n">n_1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">Interval</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span>
+            <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">child_endpoints</span><span class="p">,</span><span class="n">child_endpoints</span><span class="p">[</span><span class="mi">1</span><span class="p">:])]</span></div>
+
+<div class="viewcode-block" id="Generations.children_with_transition"><a class="viewcode-back" href="../../generations_docs.html#ifstype.generations.Generations.children_with_transition">[docs]</a>    <span class="k">def</span> <span class="nf">children_with_transition</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">nb_set</span><span class="p">:</span> <span class="n">NeighbourSet</span><span class="p">,</span>
+            <span class="n">non_red_nbs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">length_func</span><span class="o">=</span><span class="n">LengthFunction</span><span class="o">.</span><span class="n">transition</span>
+            <span class="c1"># TODO: actually implement &quot;length functions&quot;, think about proper</span>
+            <span class="c1"># arguments</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">NeighbourSet</span><span class="p">,</span> <span class="n">EdgeInfo</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the transition tuple for every child of the given neighbour</span>
+<span class="sd">        set.</span>
+
+<span class="sd">        This creates a sequence of :class:`ifstype.graph.EdgeInfo`, one for</span>
+<span class="sd">        each child of the neighbour set. These quantities are invariant of the</span>
+<span class="sd">        specific net interval which has given neighbour set and are used as</span>
+<span class="sd">        edge attributes of the transition graph.</span>
+<span class="sd">        See :meth:`compute_graph` for a usage case, and :meth:`children` for an</span>
+<span class="sd">        analgous method without computing the edge info</span>
+
+<span class="sd">        :param nb_set: the neighbour set for which to compute transition tuples</span>
+<span class="sd">        :param length_func: the length function used to assign a length to each</span>
+<span class="sd">                            edge</span>
+<span class="sd">        :return: ordered sequence of pairs of the child neighbour set and the</span>
+<span class="sd">                 edge info, one for each child</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">max_nbs</span> <span class="o">=</span> <span class="n">nb_set</span><span class="o">.</span><span class="n">maximal_nbs</span><span class="p">()</span>
+        <span class="c1"># since we want to compute the transition matrix, we have triples</span>
+        <span class="c1"># (p, orig_f, ext_f) where</span>
+        <span class="c1">#   - p is the probability associated with the extension function</span>
+        <span class="c1">#   - orig_f is the initial function</span>
+        <span class="c1">#   - ext_f is the extension function</span>
+        <span class="n">non_max_nbs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">((</span><span class="n">C</span><span class="o">.</span><span class="n">n_1</span><span class="p">,</span><span class="n">nb</span><span class="p">,</span><span class="n">nb</span><span class="p">)</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">nb_set</span><span class="o">.</span><span class="n">nonmaximal_nbs</span><span class="p">())</span>
+        <span class="n">new_nbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">max_nbs</span><span class="p">,</span><span class="n">with_prob</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">ch_ivls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_intervals</span><span class="p">(</span><span class="n">nb</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">nb</span> <span class="ow">in</span> <span class="n">new_nbs</span><span class="p">)</span>
+
+        <span class="c1"># To compute the transition matrix, transition_pairs consists of the</span>
+        <span class="c1"># child interval and a corresponding defaultdicts (with default 0) for</span>
+        <span class="c1"># each child, where the key is the (orig_f, nb)f) and the value is the</span>
+        <span class="c1"># probability of the extension</span>
+        <span class="n">transition_pairs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">ch_ivl</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">,</span>
+                <span class="p">{</span>
+                    <span class="p">(</span><span class="n">orig_f</span><span class="p">,</span><span class="n">Neighbour</span><span class="o">.</span><span class="n">from_aff</span><span class="p">(</span><span class="n">ext_f</span><span class="p">,</span><span class="n">ch_ivl</span><span class="p">)):</span><span class="n">p</span>
+                    <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">orig_f</span><span class="p">,</span><span class="n">ext_f</span>
+                    <span class="ow">in</span> <span class="n">non_max_nbs</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span>
+                        <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">new_nbs</span>
+                        <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">interval</span><span class="p">()</span><span class="o">.</span><span class="n">supset</span><span class="p">(</span><span class="n">ch_ivl</span><span class="p">)))}))</span>
+            <span class="k">for</span> <span class="n">ch_ivl</span> <span class="ow">in</span> <span class="n">ch_ivls</span><span class="p">]</span>
+
+        <span class="c1"># remove neighbours which are not reduced</span>
+        <span class="k">if</span> <span class="n">non_red_nbs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">transition_pairs</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">ch</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">(</span>
+                    <span class="nb">int</span><span class="p">,</span>
+                    <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">p</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="n">lookup</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">non_red_nbs</span><span class="p">}))</span>
+                <span class="k">for</span> <span class="n">ch</span><span class="p">,</span><span class="n">lookup</span> <span class="ow">in</span> <span class="n">transition_pairs</span><span class="p">]</span>
+
+        <span class="c1"># remove net intervals with no neighbours</span>
+        <span class="n">transition_pairs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">ch</span><span class="p">,</span><span class="n">lookup</span><span class="p">)</span> <span class="k">for</span> <span class="n">ch</span><span class="p">,</span><span class="n">lookup</span>
+            <span class="ow">in</span> <span class="n">transition_pairs</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lookup</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">ch_net_ivs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">NetInterval</span><span class="p">(</span>
+                <span class="n">ch_ivl</span><span class="o">.</span><span class="n">a</span><span class="p">,</span>
+                <span class="n">ch_ivl</span><span class="o">.</span><span class="n">b</span><span class="p">,</span>
+                <span class="n">nb_set</span><span class="o">.</span><span class="n">lmax</span><span class="p">,</span>
+                <span class="n">NeighbourSet</span><span class="p">(</span><span class="n">nbt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">nbt</span> <span class="ow">in</span> <span class="n">lookup</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">for</span> <span class="n">ch_ivl</span><span class="p">,</span><span class="n">lookup</span> <span class="ow">in</span> <span class="n">transition_pairs</span><span class="p">]</span>
+
+        <span class="n">transitions</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">TransitionMatrix</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="p">[</span><span class="n">lookup</span><span class="p">[(</span><span class="n">nb_par</span><span class="p">,</span><span class="n">nb_ch</span><span class="p">)]</span> <span class="k">for</span> <span class="n">nb_ch</span>
+                            <span class="ow">in</span> <span class="n">net_iv</span><span class="o">.</span><span class="n">nb_set</span><span class="o">.</span><span class="n">sorted_iter</span><span class="p">()]</span>
+                        <span class="k">for</span> <span class="n">nb_par</span> <span class="ow">in</span> <span class="n">nb_set</span><span class="o">.</span><span class="n">sorted_iter</span><span class="p">()])</span>
+                <span class="k">for</span> <span class="n">net_iv</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span><span class="n">lookup</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ch_net_ivs</span><span class="p">,</span> <span class="n">transition_pairs</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="p">[(</span>
+                <span class="n">nt</span><span class="o">.</span><span class="n">nb_set</span><span class="p">,</span>
+                <span class="n">EdgeInfo</span><span class="p">(</span><span class="n">nt</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">nt</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span> <span class="n">length_func</span><span class="p">(</span><span class="n">nt</span><span class="p">,</span><span class="n">nb_set</span><span class="p">),</span> <span class="n">tr</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">nt</span><span class="p">,</span> <span class="n">tr</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ch_net_ivs</span><span class="p">,</span> <span class="n">transitions</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="Generations.children"><a class="viewcode-back" href="../../generations_docs.html#ifstype.generations.Generations.children">[docs]</a>    <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nb_set</span><span class="p">:</span><span class="n">NeighbourSet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">NeighbourSet</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Construct the neighbour sets which are the children of a net</span>
+<span class="sd">        interval.</span>
+
+<span class="sd">        See also :meth:`children_with_transition`.</span>
+
+<span class="sd">        :param nb_set: the neighbour set to compute the children of</span>
+<span class="sd">        :return: sequence of neighbour sets</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">max_nbs</span> <span class="o">=</span> <span class="n">nb_set</span><span class="o">.</span><span class="n">maximal_nbs</span><span class="p">()</span>
+        <span class="n">non_max_nbs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">nb_set</span><span class="o">.</span><span class="n">nonmaximal_nbs</span><span class="p">())</span>
+        <span class="n">new_nbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">max_nbs</span><span class="p">)</span>
+        <span class="n">holding</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">ch_ivl</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span>
+                    <span class="n">non_max_nbs</span><span class="p">,</span>
+                    <span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">new_nbs</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">interval</span><span class="p">()</span><span class="o">.</span><span class="n">supset</span><span class="p">(</span><span class="n">ch_ivl</span><span class="p">)))))</span>
+            <span class="k">for</span> <span class="n">ch_ivl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">child_intervals</span><span class="p">(</span><span class="n">new_nbs</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">NetInterval</span><span class="o">.</span><span class="n">from_funcs</span><span class="p">(</span>
+                <span class="n">ch_ivl</span><span class="o">.</span><span class="n">a</span><span class="p">,</span>
+                <span class="n">ch_ivl</span><span class="o">.</span><span class="n">b</span><span class="p">,</span>
+                <span class="n">nb_set</span><span class="o">.</span><span class="n">lmax</span><span class="p">,</span>
+                <span class="n">containing_funcs</span><span class="p">)</span><span class="o">.</span><span class="n">nb_set</span> <span class="k">for</span> <span class="n">ch_ivl</span><span class="p">,</span> <span class="n">containing_funcs</span>
+            <span class="ow">in</span> <span class="n">holding</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">containing_funcs</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">]</span></div></div>
+
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">IfsType</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=alexrutar&repo=IfsType&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../structure.html">Library Organization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_documentation.html">API Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Alex Rutar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

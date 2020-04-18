@@ -232,7 +232,7 @@ class SymbolicMatrix:
         return SymbolicMatrix(tuple(self.matrix[i][j]-other.matrix[i][j] for i in range(self.xdim)) for j in range(self.ydim))
 
     def __mul__(self, other):
-        return SymbolicMatrix(tuple(sum(self.matrix[i][k]*other.matrix[k][j] for k in range(self.ydim)) for j in range(other.ydim)) for i in range(self.xdim))
+        return type(self)(tuple(sum(self.matrix[i][k]*other.matrix[k][j] for k in range(self.ydim)) for j in range(other.ydim)) for i in range(self.xdim))
 
     def __pow__(self, it):
         if it < 0 or not isinstance(it,int):
@@ -257,3 +257,7 @@ class SymbolicMatrix:
         # TODO: finish this function, and write methods in .numerics as well
         #  str1 = r"\begin{pmatrix}"
         #  str2 = "\n".join("   " + "&".join(s.as_latex() for s in sublist) + r"\\" for sublist in self.matrix)
+
+    def spectral_radius(self):
+        """..."""
+        return np.abs(np.linalg.eigvals(np.array(self))).max()

@@ -1,0 +1,273 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ifstype.generations &#8212; IfsType  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="ifstype.graph" href="graph_docs.html" />
+    <link rel="prev" title="ifstype.ifs" href="ifs_docs.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <span class="target" id="module-ifstype.generations"></span><div class="section" id="ifstype-generations">
+<h1><a class="reference internal" href="#module-ifstype.generations" title="ifstype.generations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.generations</span></code></a><a class="headerlink" href="#ifstype-generations" title="Permalink to this headline">¶</a></h1>
+<p>This module implements the <a class="reference internal" href="#ifstype.generations.Generations" title="ifstype.generations.Generations"><code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.generations.Generations</span></code></a> class which
+governs the computation of the transition graph from an IFS and other child
+dependency relationships.</p>
+<p>Public module attributes:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.generations.Generations" title="ifstype.generations.Generations"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generations</span></code></a></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">LengthFunction</span></code></p></li>
+</ul>
+</div>
+<dl class="class">
+<dt id="ifstype.generations.Generations">
+<em class="property">class </em><code class="sig-prename descclassname">ifstype.generations.</code><code class="sig-name descname">Generations</code><span class="sig-paren">(</span><em class="sig-param">ifs: ifstype.ifs.IFS</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ifstype/generations.html#Generations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.generations.Generations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute children relationships and the transition graph based on a fixed
+iterated function system.</p>
+<p>Initialization:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.generations.Generations.__init__" title="ifstype.generations.Generations.__init__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__init__()</span></code></a></p></li>
+</ul>
+<p>Methods to compute the transition graph:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.generations.Generations.compute_graph" title="ifstype.generations.Generations.compute_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_graph()</span></code></a></p></li>
+</ul>
+<p>Methods to determine IFS properties:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.generations.Generations.verify_fnc" title="ifstype.generations.Generations.verify_fnc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">verify_fnc()</span></code></a></p></li>
+</ul>
+<p>Methods to compute children:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ifstype.generations.Generations.child_intervals" title="ifstype.generations.Generations.child_intervals"><code class="xref py py-meth docutils literal notranslate"><span class="pre">child_intervals()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.generations.Generations.children" title="ifstype.generations.Generations.children"><code class="xref py py-meth docutils literal notranslate"><span class="pre">children()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#ifstype.generations.Generations.children_with_transition" title="ifstype.generations.Generations.children_with_transition"><code class="xref py py-meth docutils literal notranslate"><span class="pre">children_with_transition()</span></code></a></p></li>
+</ul>
+<dl class="method">
+<dt id="ifstype.generations.Generations.compute_graph">
+<code class="sig-name descname">compute_graph</code><span class="sig-paren">(</span><em class="sig-param">depth: int = 2000</em>, <em class="sig-param">root: Optional[ifstype.ifs.NetInterval] = None</em>, <em class="sig-param">non_red_nbs: Optional[set] = None</em><span class="sig-paren">)</span> &#x2192; ifstype.graph.TransitionGraph<a class="reference internal" href="_modules/ifstype/generations.html#Generations.compute_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.generations.Generations.compute_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the transition graph based on the stored IFS.</p>
+<p>This method will compute the children for at minimum <cite>depth</cite> net
+intervals before stopping; if this method does not terminate earlier,
+the transition graph may be incomplete.</p>
+<p>To verify completeness of thetransition graph, see
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">ifstype.Graph.is_fnc</span></code></p>
+<p>See also <a class="reference internal" href="#ifstype.generations.Generations.verify_fnc" title="ifstype.generations.Generations.verify_fnc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">verify_fnc()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>depth</strong> – the minimum number of net intervals for which children
+have been computed before stopping.</p></li>
+<li><p><strong>root</strong> – the root net interval from which the transition graph
+should be computed.</p></li>
+<li><p><strong>non_red_nbs</strong> – a (previously computed) set of reduced
+neighbours from which the neighbours
+most be drawn</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the transition graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.generations.Generations.verify_fnc">
+<code class="sig-name descname">verify_fnc</code><span class="sig-paren">(</span><em class="sig-param">depth: int = 2000</em><span class="sig-paren">)</span> &#x2192; Tuple[bool, int]<a class="reference internal" href="_modules/ifstype/generations.html#Generations.verify_fnc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.generations.Generations.verify_fnc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to verify if the stored IFS satisfies the finite neighbour
+condition.</p>
+<p>This method is a pared down version of <a class="reference internal" href="#ifstype.generations.Generations.compute_graph" title="ifstype.generations.Generations.compute_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_graph()</span></code></a>, where
+only the graph dependency structure is computed (without creating the
+transition graph). The method will compute the children for at minimum
+<cite>depth</cite> distinct neighbour sets. It returns a verification pair
+<code class="docutils literal notranslate"><span class="pre">(bool,</span> <span class="pre">computed)</span></code>.</p>
+<p>See also <a class="reference internal" href="#ifstype.generations.Generations.compute_graph" title="ifstype.generations.Generations.compute_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_graph()</span></code></a>.</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">bool</span></code> is true, then the IFS satisfies the finite neighbour
+condition with at most <code class="docutils literal notranslate"><span class="pre">computed</span></code> distinct neighbour sets
+(there may be fewer).</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">bool</span></code> is false, then the IFS may or may not be weak finite
+type, but there are at least <code class="docutils literal notranslate"><span class="pre">computed</span></code> distinct neighbour sets.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>depth</strong> – the minimum number of net intervals for which children
+have been computed before stopping.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the verification pair</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.generations.Generations.children">
+<code class="sig-name descname">children</code><span class="sig-paren">(</span><em class="sig-param">nb_set: ifstype.ifs.NeighbourSet</em><span class="sig-paren">)</span> &#x2192; Sequence[ifstype.ifs.NeighbourSet]<a class="reference internal" href="_modules/ifstype/generations.html#Generations.children"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.generations.Generations.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the neighbour sets which are the children of a net
+interval.</p>
+<p>See also <a class="reference internal" href="#ifstype.generations.Generations.children_with_transition" title="ifstype.generations.Generations.children_with_transition"><code class="xref py py-meth docutils literal notranslate"><span class="pre">children_with_transition()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nb_set</strong> – the neighbour set to compute the children of</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>sequence of neighbour sets</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.generations.Generations.children_with_transition">
+<code class="sig-name descname">children_with_transition</code><span class="sig-paren">(</span><em class="sig-param">nb_set: ifstype.ifs.NeighbourSet</em>, <em class="sig-param">non_red_nbs=None</em>, <em class="sig-param">length_func=&lt;function LengthFunction.transition&gt;</em><span class="sig-paren">)</span> &#x2192; Sequence[Tuple[ifstype.ifs.NeighbourSet, ifstype.graph.EdgeInfo]]<a class="reference internal" href="_modules/ifstype/generations.html#Generations.children_with_transition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.generations.Generations.children_with_transition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the transition tuple for every child of the given neighbour
+set.</p>
+<p>This creates a sequence of <a class="reference internal" href="graph_docs.html#ifstype.graph.EdgeInfo" title="ifstype.graph.EdgeInfo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.graph.EdgeInfo</span></code></a>, one for
+each child of the neighbour set. These quantities are invariant of the
+specific net interval which has given neighbour set and are used as
+edge attributes of the transition graph.
+See <a class="reference internal" href="#ifstype.generations.Generations.compute_graph" title="ifstype.generations.Generations.compute_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_graph()</span></code></a> for a usage case, and <a class="reference internal" href="#ifstype.generations.Generations.children" title="ifstype.generations.Generations.children"><code class="xref py py-meth docutils literal notranslate"><span class="pre">children()</span></code></a> for an
+analgous method without computing the edge info</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nb_set</strong> – the neighbour set for which to compute transition tuples</p></li>
+<li><p><strong>length_func</strong> – the length function used to assign a length to each
+edge</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ordered sequence of pairs of the child neighbour set and the
+edge info, one for each child</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.generations.Generations.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">ifs: ifstype.ifs.IFS</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/ifstype/generations.html#Generations.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.generations.Generations.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the Generations object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ifs</strong> – the iterated function system</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ifstype.generations.Generations.child_intervals">
+<code class="sig-name descname">child_intervals</code><span class="sig-paren">(</span><em class="sig-param">new_nbs: Iterable[ifstype.ifs.Neighbour]</em><span class="sig-paren">)</span> &#x2192; Sequence[ifstype.exact.interval.Interval]<a class="reference internal" href="_modules/ifstype/generations.html#Generations.child_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ifstype.generations.Generations.child_intervals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute all possible normalized intervals formed by endpoints below
+a net interval [0,1] with from an iterable of neighbours <cite>new_nbs</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_nbs</strong> – an iterable of neighbours</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of intervals in ascending order</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">IfsType</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=alexrutar&repo=IfsType&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structure.html">Library Organization</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api_documentation.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ifs_docs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.ifs</span></code></a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.generations</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="graph_docs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.graph</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="api_documentation.html">API Documentation</a><ul>
+      <li>Previous: <a href="ifs_docs.html" title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.ifs</span></code></a></li>
+      <li>Next: <a href="graph_docs.html" title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ifstype.graph</span></code></a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Alex Rutar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/generations_docs.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

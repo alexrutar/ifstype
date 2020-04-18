@@ -203,9 +203,9 @@ class IFS:
 
     @probs.setter
     def probs(self, probs: Sequence[Real]) -> None:
-        if all(C.n_0<=p for p in probs) and sum(probs) != C.n_1:
-            raise ValueError(
-                "IFS probabilities must be non-negative and sum to 1")
+        #  if all(C.n_0<=p for p in probs) and sum(probs) != C.n_1:
+            #  raise ValueError(
+                #  "IFS probabilities must be non-negative and sum to 1")
 
         if len(self.funcs) != len(probs):
             raise ValueError("funcs and probabilities must be the same size")
@@ -611,13 +611,15 @@ class TransitionMatrix(SymbolicMatrix):
         """
         return all(any(x!=0 for x in row) for row in self.matrix)
 
-    def spectral_radius(self) -> Real:
-        """Compute the approximate spectral radius of the transition matrix,
-        assuming that probabilities have been set in the corresponding IFS.
+    #  def spectral_radius(self) -> Real:
+        #  """Compute the approximate spectral radius of the transition matrix,
+        #  assuming that probabilities have been set in the corresponding IFS.
 
-        See :attr:`.IFS.probs` for details on how to set probability values.
+        #  See :attr:`.IFS.probs` for details on how to set probability values.
 
-        :return: real-valued spectral radius
-        """
-        return np.abs(np.linalg.eigvals(np.array(self))).max()
+        #  :return: real-valued spectral radius
+        #  """
+        #  return np.abs(np.linalg.eigvals(np.array(self))).max()
 
+    def q_norm(self,q=1) -> Real:
+        return sum(sum(row) for row in self.matrix)**q

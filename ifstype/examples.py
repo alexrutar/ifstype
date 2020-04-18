@@ -36,6 +36,15 @@ def eft_1(probs=None):
     return [AffineFunc(r,Fraction(0)),
             AffineFunc(r,Fraction(1)-r)]
 
+
+@ifs_family
+def eft_k(probs=None):
+    r = Fraction(1,3)
+    return [AffineFunc(r,0),
+            AffineFunc(r,1*r),
+            AffineFunc(r,2*r),
+            AffineFunc(r,Fraction(1,9))]
+
 @ifs_family
 def eft_2(probs=None,r=Fraction(1,5)):
     assert 0 <  r <= Fraction(1,2)
@@ -234,3 +243,31 @@ def test2(probs=None):
             AffineFunc(Fraction(1,4),Fraction(1,5)),
             AffineFunc(Fraction(3,10),Fraction(1,5)+Fraction(1,4)),
             AffineFunc(Fraction(1,4),Fraction(3,4))]
+
+# ---------------------------------------------------------------------------
+# Main Examples
+# ---------------------------------------------------------------------------
+@ifs_family
+def example_osc(probs=None,a=None):
+    # open set condition with overlap
+    if a is None:
+        a = Fraction(1,2)
+    assert a <= Fraction(1,2)
+    return [AffineFunc(a,0),
+            AffineFunc(a*a,a-a*a),
+            AffineFunc(a*a,1-a*a)]
+
+@ifs_family
+def example_eft(probs=None):
+    return [AffineFunc(Fraction(1,3),0),
+            AffineFunc(Fraction(1,3),Fraction(1,9)),
+            AffineFunc(Fraction(1,3),Fraction(1,3)),
+            AffineFunc(Fraction(1,3),Fraction(2,3))]
+
+@ifs_family
+def example_fnc(probs=None):
+    return [AffineFunc(Fraction(1,4),0),
+            AffineFunc(Fraction(1,3),Fraction(1,6)),
+            AffineFunc(Fraction(1,4),Fraction(1,2)),
+            AffineFunc(Fraction(1,4),Fraction(3,4))]
+

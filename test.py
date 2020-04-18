@@ -21,7 +21,7 @@ def test_adj_mat():
     #  print(adj)
 
 def test_fnc():
-    ifs = fnc_8()
+    ifs = osc_3()
     return run_ifs(ifs,"out",scale='wide',with_gens=True,verbose=True,depth=5000)
 
 def test_reduce():
@@ -40,7 +40,9 @@ def test_reduce():
 if __name__ == "__main__":
     #  test_reduce()
     #  test_reduce()
-    test_fnc()
+    gt = test_fnc()
+    gt.ifs.probs = [Fraction(1,3),Fraction(1,3),Fraction(1,3)]
+    gt.essential_local_dims()
     #  ifs = wft_5()
     #  tr_g = run_ifs(ifs, f"fnc_basic",with_gens=True,scale="relative",depth=2000)
 

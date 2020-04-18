@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Introduction &#8212; IfsType  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Library Organization" href="structure.html" />
+    <link rel="prev" title="IfsType: Iterated Function System Simulation Library" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#installation" id="id1">Installation</a></p></li>
+<li><p><a class="reference internal" href="#basic-usage" id="id2">Basic Usage</a></p></li>
+</ul>
+</div>
+<div class="section" id="installation">
+<h2><a class="toc-backref" href="#id1">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>TODO: currently not hosted on PyPI … when this is done, installation will be easy.</p>
+</div>
+<div class="section" id="basic-usage">
+<h2><a class="toc-backref" href="#id2">Basic Usage</a><a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>The first thing do to is to define an IFS.
+Here is an example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ifstype</span> <span class="k">import</span> <span class="n">AffineFunc</span>
+<span class="kn">from</span> <span class="nn">ifstype.exact</span> <span class="k">import</span> <span class="n">Fraction</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+
+<span class="n">ifs</span> <span class="o">=</span> <span class="n">IFS</span><span class="p">([</span><span class="n">AffineFunc</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+           <span class="n">AffineFunc</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">),</span>
+           <span class="n">AffineFunc</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">1</span><span class="o">-</span><span class="n">a</span><span class="o">-</span><span class="n">b</span><span class="o">+</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="p">),</span>
+           <span class="n">AffineFunc</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="mi">1</span><span class="o">-</span><span class="n">b</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>An <a class="reference internal" href="ifs_docs.html#ifstype.AffineFunc" title="ifstype.AffineFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">ifstype.AffineFunc</span></code></a> instance represents a real affine function.
+For example, <code class="docutils literal notranslate"><span class="pre">AffineFunc(r,d)</span></code> is equivalent to the affine contraction function <code class="docutils literal notranslate"><span class="pre">f(x)=r*x+d</span></code>.</p>
+<p>For basic usage, the module provides two general functions: <code class="xref py py-func docutils literal notranslate"><span class="pre">ifstype.verify_wft()</span></code> and <code class="xref py py-func docutils literal notranslate"><span class="pre">ifstype.run_ifs()</span></code>.
+Called without any keyword arguments, <code class="xref py py-func docutils literal notranslate"><span class="pre">ifstype.run_ifs()</span></code> takes two parameters: an IFS instance, and a folder name:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ifstype</span> <span class="k">import</span> <span class="n">run_ifs</span>
+
+<span class="n">tr_graph</span> <span class="o">=</span> <span class="n">run_ifs</span><span class="p">(</span><span class="n">ifs</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will generate a transition graph instance, and also print the graph visualization to the file <code class="docutils literal notranslate"><span class="pre">output/graph.pdf</span></code> and IFS information to <code class="docutils literal notranslate"><span class="pre">output/info.txt</span></code>.
+It is often also useful to visualize the interval structure of the IFS: as a result, <code class="xref py py-func docutils literal notranslate"><span class="pre">ifstype.run_ifs()</span></code> also accepts the boolean keyword argument <code class="docutils literal notranslate"><span class="pre">with_gens=True</span></code>, which will print the generations visualization to the file <code class="docutils literal notranslate"><span class="pre">output/gens.pdf</span></code>.
+This can be really slow if the IFS has a lot of net intervals!</p>
+<p>Note that this information is less informative (interesting) if the IFS does not satisfy the finite neighbour condition.
+Thus another general function <code class="xref py py-func docutils literal notranslate"><span class="pre">verify_fnc()</span></code> is a streamlined version of <code class="xref py py-func docutils literal notranslate"><span class="pre">run_ifs()</span></code> which generates no output, but will determine whether or not the IFS does in fact satisfy the finite neighbour condition.
+To use this, for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ifstype</span> <span class="k">import</span> <span class="n">verify_wft</span>
+
+<span class="n">verify_wft</span><span class="p">(</span><span class="n">ifs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, it is often useful to generate diagrams highlighting the complete behaviour of the generations of the IFS within the first k generations.
+We thus have the function <code class="xref py py-func docutils literal notranslate"><span class="pre">run_ifs_gens()</span></code>, which takes three parameters: an IFS instance, a folder name, and a depth value.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ifstype</span> <span class="k">import</span> <span class="n">run_ifs_gens</span>
+
+<span class="n">run_ifs_gens</span><span class="p">(</span><span class="n">ifs</span><span class="p">,</span><span class="s2">&quot;output&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The depth value indicates how many children to compute beneath each net interval, starting from the root net interval [0,1].</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">IfsType</a></h1>
+
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=alexrutar&repo=IfsType&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+</ul>
+</li>
+</ul>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="structure.html">Library Organization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">IfsType: Iterated Function System Simulation Library</a></li>
+      <li>Next: <a href="structure.html" title="next chapter">Library Organization</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Alex Rutar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/introduction.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
